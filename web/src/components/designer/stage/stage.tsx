@@ -21,10 +21,18 @@ import type { PlacedItem } from './layout'
 import { readPrototypeIntent } from '../prototype'
 import { Annotator } from './annotate/annotator'
 import { Artboard } from './artboard'
-import { fitBounds, panBy, unionRects, zoomAtPoint } from './camera'
+import {
+	fitBounds,
+	panBy,
+	rectsIntersect,
+	unionRects,
+	visibleWorldRect,
+	zoomAtPoint,
+} from './camera'
 import { Hud } from './hud'
 import { placedItemRect } from './layout'
 import { Minimap } from './minimap'
+import { PreviewArtboard } from './preview'
 import { PrototypeConnections } from './prototype-connections'
 import { ReferenceLayer } from './refs'
 
@@ -68,6 +76,7 @@ type StageProps = {
 	canvas?: CanvasDefinition | undefined
 	showPrototypeConnections?: boolean
 	onPrototypeNavigate?: (canvasId: string, sourceViewId?: string) => void
+	artboardMode?: 'live' | 'preview'
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -119,6 +128,24 @@ export function Stage(props: StageProps) {
 		() => props.items.filter((item) => item.kind === 'artboard'),
 		[props.items],
 	)
+	const visiblePreviewKeys = useMemo(() => {
+		if (props.artboardMode !== 'preview' || !size) return null
+		const visible = visibleWorldRect(camera, size)
+		const overscan = 320 / camera.zoom
+		const expanded = {
+			x: visible.x - overscan,
+			y: visible.y - overscan,
+			width: visible.width + overscan * 2,
+			height: visible.height + overscan * 2,
+		}
+		return new Set(
+			artboards
+				.filter((item) =>
+					rectsIntersect(placedItemRect(item, props.measured), expanded),
+				)
+				.map((item) => item.key),
+		)
+	}, [artboards, camera, props.artboardMode, props.measured, size])
 
 	const bounds = useMemo(
 		() =>
@@ -501,6 +528,17 @@ export function Stage(props: StageProps) {
 											{item.text}
 										</span>
 									</div>
+								) : props.artboardMode === 'preview' ? (
+									visiblePreviewKeys?.has(item.key) ? (
+										<PreviewArtboard
+											key={item.key}
+											item={item}
+											fallbackHeight={
+												placedItemRect(item, props.measured).height
+											}
+											onMeasure={props.onMeasure}
+										/>
+									) : null
 								) : (
 									<Artboard
 										key={item.key}

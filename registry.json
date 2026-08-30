@@ -127,6 +127,16 @@
 					"target": "~/web/src/components/designer/stage/prototype-connections.tsx"
 				},
 				{
+					"path": "web/src/components/designer/stage/preview-store.ts",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/stage/preview-store.ts"
+				},
+				{
+					"path": "web/src/components/designer/stage/preview.tsx",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/stage/preview.tsx"
+				},
+				{
 					"path": "web/src/components/designer/stage/refs.tsx",
 					"type": "registry:file",
 					"target": "~/web/src/components/designer/stage/refs.tsx"

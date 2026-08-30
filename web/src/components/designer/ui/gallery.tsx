@@ -5,6 +5,8 @@ import type { CanvasDefinition } from '../api'
 
 import { useDesignerPages } from '../context'
 import { DesignLink } from '../nav'
+import { artboardKey } from '../stage/layout'
+import { ArtboardPreviewImage } from '../stage/preview'
 
 export function GalleryPage() {
 	const canvases = useDesignerPages()
@@ -97,50 +99,31 @@ function CanvasCard(props: { canvas: CanvasDefinition }) {
 	const { canvas } = props
 	const firstView = canvas.views[0]
 	const frameRef = useRef<HTMLDivElement>(null)
-	const [scale, setScale] = useState(0)
-	// Mount the preview only when near the viewport: every card renders a real
-	// component tree, so offscreen cards stay cheap.
+	// Queue capture only near the viewport; cards never mount their own live tree.
 	const [inView, setInView] = useState(false)
 
 	useEffect(() => {
 		const frame = frameRef.current
 		if (!frame) return
-		const observer = new ResizeObserver(() => {
-			setScale(frame.clientWidth / (firstView?.width ?? 1440))
-		})
-		observer.observe(frame)
 		const visibility = new IntersectionObserver(
 			(entries) => setInView(entries.some((entry) => entry.isIntersecting)),
 			{ rootMargin: '400px' },
 		)
 		visibility.observe(frame)
 		return () => {
-			observer.disconnect()
 			visibility.disconnect()
 		}
-	}, [firstView?.width])
+	}, [])
 
 	return (
 		<DesignLink to={`/_design/c/${canvas.id}`} className="dc-card">
 			<div ref={frameRef} className="dc-card-preview">
-				{inView && firstView && scale > 0 ? (
-					<div
-						className="pointer-events-none absolute top-0 left-0 origin-top-left"
-						style={{ width: firstView.width, transform: `scale(${scale})` }}
-					>
-						<div
-							className="overflow-hidden"
-							style={{
-								maxHeight:
-									(frameRef.current?.clientHeight ?? 0) /
-									Math.max(scale, 0.001),
-								backgroundColor: firstView.dark ? '#09090b' : '#ffffff',
-								color: firstView.dark ? '#fafafa' : '#09090b',
-							}}
-						>
-							{firstView.render()}
-						</div>
-					</div>
+				{firstView ? (
+					<ArtboardPreviewImage
+						previewKey={artboardKey(canvas.id, firstView.id)}
+						view={firstView}
+						enabled={inView}
+					/>
 				) : null}
 			</div>
 			<div className="flex items-start justify-between gap-3 px-4 py-3">

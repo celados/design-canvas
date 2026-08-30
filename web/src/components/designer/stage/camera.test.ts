@@ -4,6 +4,7 @@ import {
 	clampZoom,
 	fitBounds,
 	panBy,
+	rectsIntersect,
 	unionRects,
 	visibleWorldRect,
 	zoomAtPoint,
@@ -51,6 +52,18 @@ describe('panBy', () => {
 			y: -2,
 			zoom: 3,
 		})
+	})
+})
+
+describe('rectsIntersect', () => {
+	it('includes touching edges and excludes separated rectangles', () => {
+		const viewport = { x: 0, y: 0, width: 100, height: 100 }
+		expect(
+			rectsIntersect(viewport, { x: 100, y: 20, width: 40, height: 40 }),
+		).toBe(true)
+		expect(
+			rectsIntersect(viewport, { x: 101, y: 20, width: 40, height: 40 }),
+		).toBe(false)
 	})
 })
 

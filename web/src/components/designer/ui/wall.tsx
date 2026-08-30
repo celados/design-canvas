@@ -26,7 +26,10 @@ export function WallPage() {
 		})
 	}, [])
 
-	const items = useMemo(() => layoutWall(canvases, measured), [measured])
+	const items = useMemo(
+		() => layoutWall(canvases, measured),
+		[canvases, measured],
+	)
 
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
@@ -62,6 +65,7 @@ export function WallPage() {
 			onMeasure={onMeasure}
 			initialCamera={initialCamera}
 			onCameraMove={onCameraMove}
+			artboardMode="preview"
 		/>
 	)
 }
