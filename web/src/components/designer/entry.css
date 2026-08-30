@@ -1,0 +1,31 @@
+/* Floating entry button: loaded by the host app shell, separate from the
+   lazy design-canvas chunk so it styles correctly outside /_design. */
+
+.dc-entry .dc-brand-mark {
+	color: #818cf8;
+}
+
+/* ── Floating entry ────────────────────────────────────────────────── */
+
+.dc-entry {
+	position: fixed;
+	right: 18px;
+	bottom: 18px;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	border-radius: 999px;
+	background: #fafafa;
+	padding: 9px 16px;
+	font-size: 13px;
+	font-weight: 700;
+	color: #17171a;
+	box-shadow:
+		0 0 0 1px rgb(0 0 0 / 0.08),
+		0 10px 30px rgb(0 0 0 / 0.35);
+	transition: transform 150ms ease;
+}
+.dc-entry:hover {
+	transform: translateY(-1px);
+}

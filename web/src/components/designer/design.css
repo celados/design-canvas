@@ -1,0 +1,782 @@
+/* Design canvas chrome. Scoped dc-* classes; artboard content stays untouched. */
+
+.dc-root {
+	position: fixed;
+	inset: 0;
+	overflow: hidden;
+	background: #0a0a0c;
+	color: #e4e4e7;
+	font-family:
+		'Inter Variable',
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		'Segoe UI',
+		sans-serif;
+}
+
+.dc-scroll {
+	scrollbar-width: thin;
+	scrollbar-color: rgb(255 255 255 / 0.14) transparent;
+}
+.dc-scroll::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+.dc-scroll::-webkit-scrollbar-thumb {
+	background: rgb(255 255 255 / 0.14);
+	border-radius: 4px;
+}
+
+.dc-body {
+	position: absolute;
+	inset: 0;
+}
+/* The navigator floats over stages, but the gallery is a reading surface:
+   shift it clear of the open panel. */
+.dc-body[data-nav-open] .dc-gallery {
+	padding-left: 316px;
+}
+
+/* ── Stage ─────────────────────────────────────────────────────────── */
+
+.dc-stage {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	touch-action: none;
+	user-select: none;
+	cursor: default;
+}
+.dc-stage[data-panning] {
+	cursor: grabbing;
+}
+/* Space-held pan affordance must beat artboard content cursors (buttons,
+   text selection) so the hand shows everywhere inside the stage. */
+.dc-stage[data-space-pan],
+.dc-stage[data-space-pan] * {
+	cursor: grab;
+}
+.dc-stage[data-panning],
+.dc-stage[data-panning] * {
+	cursor: grabbing;
+}
+
+.dc-world {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0;
+	height: 0;
+	transform-origin: 0 0;
+	will-change: transform;
+}
+
+.dc-dots {
+	position: absolute;
+	background-image: radial-gradient(
+		circle,
+		rgb(255 255 255 / 0.09) 1px,
+		transparent 1.4px
+	);
+	background-size: 24px 24px;
+	pointer-events: none;
+}
+
+.dc-label-group {
+	position: absolute;
+	transform: translateY(-100%);
+	padding-bottom: 20px;
+	white-space: nowrap;
+	color: rgb(255 255 255 / 0.4);
+}
+.dc-label-group > span {
+	display: inline-block;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+.dc-label-canvas {
+	position: absolute;
+	transform: translateY(-100%);
+	padding-bottom: 12px;
+	white-space: nowrap;
+	color: rgb(255 255 255 / 0.3);
+}
+.dc-label-canvas > span {
+	display: inline-block;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+/* ── Artboard ──────────────────────────────────────────────────────── */
+
+.dc-artboard-label {
+	position: absolute;
+	bottom: calc(100% + 10px);
+	left: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.dc-chip {
+	display: inline-flex;
+	align-items: center;
+	border-radius: 5px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(255 255 255 / 0.05);
+	padding: 1px 6px;
+	font-size: 10.5px;
+	font-weight: 500;
+	color: #a3a3a3;
+	text-transform: capitalize;
+}
+
+.dc-label-button {
+	border-radius: 5px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(23 23 26 / 0.9);
+	padding: 1px 7px;
+	font-size: 10.5px;
+	font-weight: 600;
+	color: #d4d4d8;
+	cursor: pointer;
+}
+.dc-label-button:hover {
+	background: rgb(38 38 42 / 0.95);
+}
+
+.dc-frame {
+	overflow: hidden;
+	border-radius: 10px;
+	box-shadow:
+		0 0 0 1px rgb(255 255 255 / 0.09),
+		0 24px 64px rgb(0 0 0 / 0.5);
+	user-select: text;
+}
+
+/* ── HUD ───────────────────────────────────────────────────────────── */
+
+/* Full-size relative anchor so canvas-scoped overlays (device bar) can sit
+   above the absolutely-positioned stage. */
+.dc-canvas-page {
+	position: absolute;
+	inset: 0;
+}
+
+.dc-device-bar {
+	position: absolute;
+	top: 16px;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	border-radius: 10px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(20 20 23 / 0.92);
+	padding: 3px;
+	box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
+	backdrop-filter: blur(10px);
+}
+.dc-device-bar .dc-chip-button {
+	min-width: 64px;
+	justify-content: center;
+}
+.dc-device-bar .dc-chip-button:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.dc-hud {
+	position: absolute;
+	bottom: 16px;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	border-radius: 10px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(20 20 23 / 0.92);
+	padding: 3px;
+	box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
+	backdrop-filter: blur(10px);
+}
+.dc-hud-button {
+	border-radius: 7px;
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #d4d4d8;
+	cursor: pointer;
+	min-width: 40px;
+}
+.dc-hud-button:hover {
+	background: rgb(255 255 255 / 0.08);
+	color: #fafafa;
+}
+.dc-hud-divider {
+	width: 1px;
+	height: 16px;
+	background: rgb(255 255 255 / 0.1);
+}
+
+/* ── Shortcuts overlay ─────────────────────────────────────────────── */
+
+.dc-shortcuts-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	display: grid;
+	place-items: center;
+	background: rgb(0 0 0 / 0.55);
+	backdrop-filter: blur(2px);
+}
+.dc-shortcuts {
+	width: 320px;
+	border-radius: 12px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(20 20 23 / 0.97);
+	padding: 14px;
+	box-shadow: 0 24px 64px rgb(0 0 0 / 0.5);
+}
+.dc-shortcut-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 3px 4px;
+}
+
+/* ── Minimap ───────────────────────────────────────────────────────── */
+
+.dc-minimap {
+	position: absolute;
+	right: 16px;
+	bottom: 16px;
+	border-radius: 9px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(16 16 19 / 0.92);
+	box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
+	backdrop-filter: blur(10px);
+	overflow: hidden;
+	cursor: pointer;
+}
+.dc-minimap-item {
+	position: absolute;
+	border-radius: 1.5px;
+	background: rgb(255 255 255 / 0.28);
+}
+.dc-minimap-view {
+	position: absolute;
+	border-radius: 2px;
+	border: 1px solid rgb(255 255 255 / 0.75);
+	background: rgb(255 255 255 / 0.06);
+}
+
+/* ── Reference images ──────────────────────────────────────────────── */
+
+.dc-ref {
+	position: absolute;
+	cursor: grab;
+}
+.dc-ref:active {
+	cursor: grabbing;
+}
+.dc-ref img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 6px;
+	box-shadow: 0 0 0 1px rgb(255 255 255 / 0.18);
+	pointer-events: none;
+}
+.dc-ref-toolbar {
+	position: absolute;
+	top: -34px;
+	left: 0;
+	display: none;
+	align-items: center;
+	gap: 6px;
+	border-radius: 7px;
+	border: 1px solid rgb(255 255 255 / 0.12);
+	background: rgb(20 20 23 / 0.94);
+	padding: 4px 8px;
+}
+.dc-ref:hover .dc-ref-toolbar {
+	display: flex;
+}
+.dc-ref-toolbar input[type='range'] {
+	width: 72px;
+	height: 3px;
+	accent-color: #a3a3a3;
+}
+.dc-ref-toolbar button {
+	font-size: 13px;
+	line-height: 1;
+	color: #a3a3a3;
+	cursor: pointer;
+	padding: 0 2px;
+}
+.dc-ref-toolbar button:hover {
+	color: #fafafa;
+}
+.dc-ref-resize {
+	position: absolute;
+	right: -7px;
+	bottom: -7px;
+	width: 14px;
+	height: 14px;
+	border-radius: 4px;
+	border: 1.5px solid rgb(255 255 255 / 0.7);
+	background: #17171a;
+	cursor: nwse-resize;
+	opacity: 0;
+}
+.dc-ref:hover .dc-ref-resize {
+	opacity: 1;
+}
+
+/* ── Navigator ─────────────────────────────────────────────────────── */
+
+.dc-nav-fab {
+	position: absolute;
+	top: 14px;
+	left: 14px;
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	border-radius: 9px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(20 20 23 / 0.92);
+	padding: 7px 12px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: #e4e4e7;
+	box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
+	backdrop-filter: blur(10px);
+	cursor: pointer;
+}
+.dc-nav-fab:hover {
+	background: rgb(32 32 36 / 0.95);
+}
+
+.dc-nav {
+	position: absolute;
+	top: 14px;
+	left: 14px;
+	z-index: 40;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 272px;
+	max-height: calc(100% - 28px);
+	overflow-y: auto;
+	border-radius: 12px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(16 16 19 / 0.94);
+	padding: 12px;
+	box-shadow: 0 12px 36px rgb(0 0 0 / 0.5);
+	backdrop-filter: blur(12px);
+}
+
+.dc-nav-brand {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: #fafafa;
+}
+.dc-brand-mark {
+	color: #818cf8;
+}
+
+.dc-icon-button {
+	display: grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	color: #a3a3a3;
+	cursor: pointer;
+}
+.dc-icon-button:hover {
+	background: rgb(255 255 255 / 0.08);
+	color: #fafafa;
+}
+
+.dc-nav-search {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	border-radius: 8px;
+	border: 1px solid rgb(255 255 255 / 0.09);
+	background: rgb(255 255 255 / 0.04);
+	padding: 6px 9px;
+}
+.dc-nav-search input {
+	width: 100%;
+	background: transparent;
+	border: none;
+	outline: none;
+	font-size: 12.5px;
+	color: #e4e4e7;
+}
+.dc-nav-search input::placeholder {
+	color: #525252;
+}
+
+.dc-nav-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border-radius: 7px;
+	padding: 5px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #a3a3a3;
+}
+.dc-nav-pill:hover {
+	background: rgb(255 255 255 / 0.06);
+	color: #e4e4e7;
+}
+.dc-nav-pill-active {
+	background: rgb(255 255 255 / 0.09);
+	color: #fafafa;
+}
+
+.dc-nav-group {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	padding: 4px 6px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #737373;
+	cursor: pointer;
+}
+.dc-nav-group:hover {
+	color: #a3a3a3;
+}
+
+.dc-nav-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	border-radius: 7px;
+	padding: 5px 8px 5px 22px;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: #c4c4cc;
+}
+.dc-nav-item:hover {
+	background: rgb(255 255 255 / 0.06);
+	color: #fafafa;
+}
+.dc-nav-item-active {
+	background: rgb(129 140 248 / 0.16);
+	color: #c7d2fe;
+}
+.dc-nav-count {
+	font-size: 10.5px;
+	color: #525252;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ── Command palette ───────────────────────────────────────────────── */
+
+.dc-palette-backdrop {
+	position: absolute;
+	inset: 0;
+	z-index: 60;
+	background: rgb(0 0 0 / 0.5);
+	backdrop-filter: blur(3px);
+}
+.dc-palette {
+	position: absolute;
+	top: 16vh;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 560px;
+	max-width: calc(100vw - 48px);
+	border-radius: 13px;
+	border: 1px solid rgb(255 255 255 / 0.12);
+	background: rgb(18 18 21 / 0.97);
+	box-shadow: 0 24px 72px rgb(0 0 0 / 0.6);
+	overflow: hidden;
+}
+.dc-palette input {
+	width: 100%;
+	border: none;
+	outline: none;
+	background: transparent;
+	border-bottom: 1px solid rgb(255 255 255 / 0.08);
+	padding: 14px 16px;
+	font-size: 14px;
+	color: #fafafa;
+}
+.dc-palette input::placeholder {
+	color: #525252;
+}
+.dc-palette-list {
+	max-height: 320px;
+	overflow-y: auto;
+	padding: 6px;
+}
+.dc-palette-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	border-radius: 8px;
+	padding: 8px 10px;
+	font-size: 13px;
+	color: #d4d4d8;
+	cursor: pointer;
+}
+.dc-palette-item-active {
+	background: rgb(129 140 248 / 0.16);
+	color: #eef2ff;
+}
+.dc-palette-footer {
+	display: flex;
+	gap: 16px;
+	border-top: 1px solid rgb(255 255 255 / 0.08);
+	padding: 8px 16px;
+	font-size: 11px;
+	color: #525252;
+}
+
+/* ── Gallery ───────────────────────────────────────────────────────── */
+
+.dc-gallery {
+	position: absolute;
+	inset: 0;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	padding: 26px 30px 60px;
+}
+.dc-gallery-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	padding-right: 210px;
+}
+
+.dc-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	border-radius: 8px;
+	border: 1px solid rgb(255 255 255 / 0.12);
+	background: rgb(255 255 255 / 0.06);
+	padding: 7px 12px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: #e4e4e7;
+	cursor: pointer;
+}
+.dc-button:hover {
+	background: rgb(255 255 255 / 0.1);
+}
+
+.dc-chip-button {
+	border-radius: 999px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	padding: 4px 12px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #a3a3a3;
+	cursor: pointer;
+}
+/* Hover must not touch the active pill: its inverted light surface pairs with
+   dark ink, and a blanket hover would paint light-on-light. */
+.dc-chip-button:not(.dc-chip-button-active):hover {
+	color: #e4e4e7;
+	border-color: rgb(255 255 255 / 0.2);
+}
+.dc-chip-button-active {
+	background: #e4e4e7;
+	border-color: #e4e4e7;
+	color: #17171a;
+}
+
+.dc-gallery-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+	gap: 22px;
+}
+
+.dc-card {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	border-radius: 13px;
+	border: 1px solid rgb(255 255 255 / 0.09);
+	background: rgb(255 255 255 / 0.03);
+	transition:
+		border-color 150ms ease,
+		transform 150ms ease;
+}
+.dc-card:hover {
+	border-color: rgb(255 255 255 / 0.22);
+	transform: translateY(-2px);
+}
+.dc-card-preview {
+	position: relative;
+	aspect-ratio: 16 / 10;
+	overflow: hidden;
+	background: #101013;
+	border-bottom: 1px solid rgb(255 255 255 / 0.07);
+}
+
+/* ── Annotator ─────────────────────────────────────────────────────── */
+
+.dc-stage[data-annotating] [data-dc-frame],
+.dc-stage[data-annotating] [data-dc-frame] * {
+	cursor: crosshair;
+}
+
+.dc-highlight {
+	position: absolute;
+	z-index: 30;
+	pointer-events: none;
+	border: 1.5px solid #818cf8;
+	border-radius: 3px;
+	background: rgb(129 140 248 / 0.12);
+}
+
+.dc-pin {
+	position: absolute;
+	z-index: 35;
+	display: grid;
+	place-items: center;
+	width: 20px;
+	height: 20px;
+	translate: -50% -50%;
+	border-radius: 999px;
+	border: 1.5px solid rgb(255 255 255 / 0.85);
+	background: #6366f1;
+	color: #fff;
+	font-size: 10.5px;
+	font-weight: 700;
+	box-shadow: 0 2px 10px rgb(0 0 0 / 0.4);
+	cursor: pointer;
+}
+.dc-pin:hover {
+	background: #818cf8;
+}
+
+.dc-pin-static {
+	display: inline-grid;
+	place-items: center;
+	width: 16px;
+	height: 16px;
+	border-radius: 999px;
+	background: rgb(99 102 241 / 0.25);
+	color: #c7d2fe;
+	font-size: 10px;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.dc-composer {
+	position: absolute;
+	z-index: 70;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 320px;
+	border-radius: 11px;
+	border: 1px solid rgb(255 255 255 / 0.12);
+	background: rgb(20 20 23 / 0.97);
+	padding: 10px;
+	box-shadow: 0 16px 48px rgb(0 0 0 / 0.55);
+	backdrop-filter: blur(10px);
+}
+.dc-composer textarea {
+	width: 100%;
+	resize: vertical;
+	border-radius: 8px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(255 255 255 / 0.05);
+	padding: 8px 10px;
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: #e4e4e7;
+	outline: none;
+}
+.dc-composer textarea:focus {
+	border-color: rgb(129 140 248 / 0.6);
+}
+.dc-composer-submit {
+	background: #6366f1;
+	border-color: transparent;
+	color: #fff;
+}
+.dc-composer-submit:hover {
+	background: #818cf8;
+}
+
+.dc-anno-panel {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	z-index: 50;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 300px;
+	max-height: calc(100% - 76px);
+	overflow-y: auto;
+	border-radius: 12px;
+	border: 1px solid rgb(255 255 255 / 0.1);
+	background: rgb(16 16 19 / 0.94);
+	padding: 12px;
+	box-shadow: 0 12px 36px rgb(0 0 0 / 0.5);
+	backdrop-filter: blur(12px);
+}
+
+.dc-anno-row {
+	display: flex;
+	gap: 6px;
+	border-radius: 9px;
+	padding: 7px 8px;
+}
+.dc-anno-row:hover {
+	background: rgb(255 255 255 / 0.05);
+}
+
+.dc-kbd {
+	border-radius: 4px;
+	border: 1px solid rgb(255 255 255 / 0.16);
+	padding: 0 5px;
+	font-family: inherit;
+	font-size: 10.5px;
+	color: #d4d4d8;
+}
+
+.dc-hud-button-active {
+	background: rgb(99 102 241 / 0.25);
+	color: #c7d2fe;
+}
+.dc-hud-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
