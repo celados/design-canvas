@@ -19,192 +19,192 @@
 				{
 					"path": "web/src/components/designer/api.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/api.ts"
+					"target": "~/web/src/components/designer/api.ts"
 				},
 				{
 					"path": "web/src/components/designer/context.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/context.tsx"
+					"target": "~/web/src/components/designer/context.tsx"
 				},
 				{
 					"path": "web/src/components/designer/design.css",
 					"type": "registry:file",
-					"target": "~/src/components/designer/design.css"
+					"target": "~/web/src/components/designer/design.css"
 				},
 				{
 					"path": "web/src/components/designer/designer.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/designer.tsx"
+					"target": "~/web/src/components/designer/designer.tsx"
 				},
 				{
 					"path": "web/src/components/designer/entry.css",
 					"type": "registry:file",
-					"target": "~/src/components/designer/entry.css"
+					"target": "~/web/src/components/designer/entry.css"
 				},
 				{
 					"path": "web/src/components/designer/index.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/index.ts"
+					"target": "~/web/src/components/designer/index.ts"
 				},
 				{
 					"path": "web/src/components/designer/nav.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/nav.tsx"
+					"target": "~/web/src/components/designer/nav.tsx"
 				},
 				{
 					"path": "web/src/components/designer/search.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/search.ts"
+					"target": "~/web/src/components/designer/search.ts"
 				},
 				{
 					"path": "web/src/components/designer/stage/annotate/annotator.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/annotate/annotator.tsx"
+					"target": "~/web/src/components/designer/stage/annotate/annotator.tsx"
 				},
 				{
 					"path": "web/src/components/designer/stage/annotate/capture.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/annotate/capture.ts"
+					"target": "~/web/src/components/designer/stage/annotate/capture.ts"
 				},
 				{
 					"path": "web/src/components/designer/stage/annotate/markdown.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/annotate/markdown.ts"
+					"target": "~/web/src/components/designer/stage/annotate/markdown.ts"
 				},
 				{
 					"path": "web/src/components/designer/stage/annotate/model.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/annotate/model.ts"
+					"target": "~/web/src/components/designer/stage/annotate/model.ts"
 				},
 				{
 					"path": "web/src/components/designer/stage/annotate/resolve.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/annotate/resolve.ts"
+					"target": "~/web/src/components/designer/stage/annotate/resolve.ts"
 				},
 				{
 					"path": "web/src/components/designer/stage/artboard-error-boundary.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/artboard-error-boundary.tsx"
+					"target": "~/web/src/components/designer/stage/artboard-error-boundary.tsx"
 				},
 				{
 					"path": "web/src/components/designer/stage/artboard.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/artboard.tsx"
+					"target": "~/web/src/components/designer/stage/artboard.tsx"
 				},
 				{
 					"path": "web/src/components/designer/stage/camera.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/camera.ts"
+					"target": "~/web/src/components/designer/stage/camera.ts"
 				},
 				{
 					"path": "web/src/components/designer/stage/hud.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/hud.tsx"
+					"target": "~/web/src/components/designer/stage/hud.tsx"
 				},
 				{
 					"path": "web/src/components/designer/stage/layout.ts",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/layout.ts"
+					"target": "~/web/src/components/designer/stage/layout.ts"
 				},
 				{
 					"path": "web/src/components/designer/stage/minimap.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/minimap.tsx"
+					"target": "~/web/src/components/designer/stage/minimap.tsx"
 				},
 				{
 					"path": "web/src/components/designer/stage/refs.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/refs.tsx"
+					"target": "~/web/src/components/designer/stage/refs.tsx"
 				},
 				{
 					"path": "web/src/components/designer/stage/stage.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/stage/stage.tsx"
+					"target": "~/web/src/components/designer/stage/stage.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/canvas-page.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/canvas-page.tsx"
+					"target": "~/web/src/components/designer/ui/canvas-page.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/device-switcher.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/device-switcher.tsx"
+					"target": "~/web/src/components/designer/ui/device-switcher.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/entry.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/entry.tsx"
+					"target": "~/web/src/components/designer/ui/entry.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/gallery.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/gallery.tsx"
+					"target": "~/web/src/components/designer/ui/gallery.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/navigator.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/navigator.tsx"
+					"target": "~/web/src/components/designer/ui/navigator.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/palette.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/palette.tsx"
+					"target": "~/web/src/components/designer/ui/palette.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/shell.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/shell.tsx"
+					"target": "~/web/src/components/designer/ui/shell.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/shortcuts.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/shortcuts.tsx"
+					"target": "~/web/src/components/designer/ui/shortcuts.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/wall.tsx",
 					"type": "registry:file",
-					"target": "~/src/components/designer/ui/wall.tsx"
+					"target": "~/web/src/components/designer/ui/wall.tsx"
 				},
 				{
 					"path": "web/src/design/dashboard.tsx",
 					"type": "registry:file",
-					"target": "~/src/design/dashboard.tsx"
+					"target": "~/web/src/design/dashboard.tsx"
 				},
 				{
 					"path": "web/src/design/hero.tsx",
 					"type": "registry:file",
-					"target": "~/src/design/hero.tsx"
+					"target": "~/web/src/design/hero.tsx"
 				},
 				{
 					"path": "web/src/design/layout.tsx",
 					"type": "registry:file",
-					"target": "~/src/design/layout.tsx"
+					"target": "~/web/src/design/layout.tsx"
 				},
 				{
 					"path": "web/src/design/pricing.tsx",
 					"type": "registry:file",
-					"target": "~/src/design/pricing.tsx"
+					"target": "~/web/src/design/pricing.tsx"
 				},
 				{
 					"path": "web/src/routes/[_]design.tsx",
 					"type": "registry:file",
-					"target": "~/src/routes/[_]design.tsx"
+					"target": "~/web/src/routes/[_]design.tsx"
 				},
 				{
 					"path": "web/src/routes/[_]design/c.$canvasId.tsx",
 					"type": "registry:file",
-					"target": "~/src/routes/[_]design/c.$canvasId.tsx"
+					"target": "~/web/src/routes/[_]design/c.$canvasId.tsx"
 				},
 				{
 					"path": "web/src/routes/[_]design/index.tsx",
 					"type": "registry:file",
-					"target": "~/src/routes/[_]design/index.tsx"
+					"target": "~/web/src/routes/[_]design/index.tsx"
 				},
 				{
 					"path": "web/src/routes/[_]design/wall.tsx",
 					"type": "registry:file",
-					"target": "~/src/routes/[_]design/wall.tsx"
+					"target": "~/web/src/routes/[_]design/wall.tsx"
 				}
 			],
 			"docs": "Run `bun run routegen`, start the app, and open `/_design`. The installer does not modify the product-owned root route; see the Design Canvas README for the optional floating entry integration."
