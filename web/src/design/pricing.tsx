@@ -1,3 +1,5 @@
+import { PrototypeLink } from '@/components/designer/prototype-link'
+
 const TIERS = [
 	{
 		name: 'Starter',
@@ -43,6 +45,28 @@ const TIERS = [
 		cta: 'Talk to sales',
 	},
 ]
+
+function TierCta(props: { tier: (typeof TIERS)[number] }) {
+	const { tier } = props
+	const element = (
+		<span
+			className={`mt-8 rounded-lg px-4 py-2.5 text-center text-sm font-semibold ${
+				tier.featured
+					? 'bg-white text-neutral-950'
+					: 'border border-neutral-300 text-neutral-800'
+			}`}
+		>
+			{tier.cta}
+		</span>
+	)
+	return tier.featured ? (
+		<PrototypeLink id="team-trial" to="dashboard" label="Start trial">
+			{element}
+		</PrototypeLink>
+	) : (
+		element
+	)
+}
 
 function PricingTable({ compact }: { compact?: boolean }) {
 	return (
@@ -110,15 +134,7 @@ function PricingTable({ compact }: { compact?: boolean }) {
 							</li>
 						))}
 					</ul>
-					<span
-						className={`mt-8 rounded-lg px-4 py-2.5 text-center text-sm font-semibold ${
-							tier.featured
-								? 'bg-white text-neutral-950'
-								: 'border border-neutral-300 text-neutral-800'
-						}`}
-					>
-						{tier.cta}
-					</span>
+					<TierCta tier={tier} />
 				</div>
 			))}
 		</section>

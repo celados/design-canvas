@@ -83,6 +83,34 @@
 	pointer-events: none;
 }
 
+.dc-prototype-connections {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 1px;
+	height: 1px;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.dc-prototype-path {
+	fill: none;
+	stroke: #818cf8;
+	stroke-width: 3;
+	stroke-linecap: round;
+	stroke-opacity: 0.85;
+}
+
+.dc-prototype-connections marker path {
+	fill: #818cf8;
+}
+
+.dc-prototype-point {
+	fill: #18181b;
+	stroke: #a5b4fc;
+	stroke-width: 3;
+}
+
 .dc-label-group {
 	position: absolute;
 	transform: translateY(-100%);

@@ -88,6 +88,13 @@ export function CommandPalette() {
 				run: () => navigate('/_design/wall'),
 			},
 			{
+				key: 'action:flow',
+				label: 'Go to Flow — prototype connections',
+				hint: 'Page',
+				icon: 'action',
+				run: () => navigate('/_design/flow'),
+			},
+			{
 				key: 'action:fit',
 				label: 'Zoom to fit',
 				hint: 'Stage · ⌘0',

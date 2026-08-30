@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import type { CanvasDefinition } from '../api'
 
-import { artboardKey, layoutViews, layoutWall, placedItemRect } from './layout'
+import {
+	artboardKey,
+	layoutFlow,
+	layoutViews,
+	layoutWall,
+	placedItemRect,
+} from './layout'
 
 function canvas(id: string, group: string, widths: number[]): CanvasDefinition {
 	return {
@@ -32,6 +38,21 @@ describe('layoutViews', () => {
 		expect(artboards[0]).toMatchObject({ x: 0, y: 0, width: 1440 })
 		// Second board starts after the first plus COL_GAP (72).
 		expect(artboards[1]?.x).toBe(1440 + 72)
+	})
+})
+
+describe('layoutFlow', () => {
+	it('uses one representative view per canvas in registry order', () => {
+		const items = layoutFlow([
+			canvas('hero', 'Marketing', [1440, 390]),
+			canvas('pricing', 'Marketing', [1200, 390]),
+		])
+		const artboards = items.filter((item) => item.kind === 'artboard')
+		expect(artboards.map((item) => item.key)).toEqual([
+			'hero::v1440',
+			'pricing::v1200',
+		])
+		expect(artboards[1]?.x).toBe(1440 + 240)
 	})
 })
 

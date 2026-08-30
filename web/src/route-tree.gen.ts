@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesignRouteImport } from './routes/[_]design'
 import { Route as DesignIndexRouteImport } from './routes/[_]design/index'
+import { Route as DesignFlowRouteImport } from './routes/[_]design/flow'
 import { Route as DesignWallRouteImport } from './routes/[_]design/wall'
 import { Route as DesignCCanvasIdRouteImport } from './routes/[_]design/c.$canvasId'
 
@@ -30,6 +31,11 @@ const DesignIndexRoute = DesignIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DesignRoute,
 } as any)
+const DesignFlowRoute = DesignFlowRouteImport.update({
+  id: '/flow',
+  path: '/flow',
+  getParentRoute: () => DesignRoute,
+} as any)
 const DesignWallRoute = DesignWallRouteImport.update({
   id: '/wall',
   path: '/wall',
@@ -44,12 +50,14 @@ const DesignCCanvasIdRoute = DesignCCanvasIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/_design': typeof DesignRouteWithChildren
+  '/_design/flow': typeof DesignFlowRoute
   '/_design/wall': typeof DesignWallRoute
   '/_design/': typeof DesignIndexRoute
   '/_design/c/$canvasId': typeof DesignCCanvasIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/_design/flow': typeof DesignFlowRoute
   '/_design/wall': typeof DesignWallRoute
   '/_design': typeof DesignIndexRoute
   '/_design/c/$canvasId': typeof DesignCCanvasIdRoute
@@ -58,6 +66,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_design': typeof DesignRouteWithChildren
+  '/_design/flow': typeof DesignFlowRoute
   '/_design/wall': typeof DesignWallRoute
   '/_design/': typeof DesignIndexRoute
   '/_design/c/$canvasId': typeof DesignCCanvasIdRoute
@@ -65,13 +74,24 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/_design' | '/_design/wall' | '/_design/' | '/_design/c/$canvasId'
+    | '/'
+    | '/_design'
+    | '/_design/flow'
+    | '/_design/wall'
+    | '/_design/'
+    | '/_design/c/$canvasId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/_design/wall' | '/_design' | '/_design/c/$canvasId'
+  to:
+    | '/'
+    | '/_design/flow'
+    | '/_design/wall'
+    | '/_design'
+    | '/_design/c/$canvasId'
   id:
     | '__root__'
     | '/'
     | '/_design'
+    | '/_design/flow'
     | '/_design/wall'
     | '/_design/'
     | '/_design/c/$canvasId'
@@ -105,6 +125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DesignIndexRouteImport
       parentRoute: typeof DesignRoute
     }
+    '/_design/flow': {
+      id: '/_design/flow'
+      path: '/flow'
+      fullPath: '/_design/flow'
+      preLoaderRoute: typeof DesignFlowRouteImport
+      parentRoute: typeof DesignRoute
+    }
     '/_design/wall': {
       id: '/_design/wall'
       path: '/wall'
@@ -123,12 +150,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface DesignRouteChildren {
+  DesignFlowRoute: typeof DesignFlowRoute
   DesignWallRoute: typeof DesignWallRoute
   DesignIndexRoute: typeof DesignIndexRoute
   DesignCCanvasIdRoute: typeof DesignCCanvasIdRoute
 }
 
 const DesignRouteChildren: DesignRouteChildren = {
+  DesignFlowRoute: DesignFlowRoute,
   DesignWallRoute: DesignWallRoute,
   DesignIndexRoute: DesignIndexRoute,
   DesignCCanvasIdRoute: DesignCCanvasIdRoute,

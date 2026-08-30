@@ -1,4 +1,11 @@
-import { ChevronDown, LayoutGrid, PanelsTopLeft, Search, X } from 'lucide-react'
+import {
+	ChevronDown,
+	GitBranch,
+	LayoutGrid,
+	PanelsTopLeft,
+	Search,
+	X,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { useDesignerPages } from '../context'
@@ -87,6 +94,12 @@ export function Navigator(props: {
 					className={`dc-nav-pill ${pathname === '/_design/wall' ? 'dc-nav-pill-active' : ''}`}
 				>
 					<PanelsTopLeft size={13} /> Wall
+				</DesignLink>
+				<DesignLink
+					to="/_design/flow"
+					className={`dc-nav-pill ${pathname === '/_design/flow' ? 'dc-nav-pill-active' : ''}`}
+				>
+					<GitBranch size={13} /> Flow
 				</DesignLink>
 			</div>
 

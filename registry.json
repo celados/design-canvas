@@ -7,7 +7,7 @@
 			"name": "tanstack-start",
 			"type": "registry:block",
 			"title": "Design Canvas for TanStack Start",
-			"description": "A development-only gallery, responsive canvas, reference overlay, screenshot, and source-linked annotation workspace.",
+			"description": "A development-only gallery, responsive canvas, prototype flow, reference overlay, screenshot, and source-linked annotation workspace.",
 			"author": "Ethan Huo <huodong.work@gmail.com>",
 			"dependencies": [
 				"@tanstack/react-router",
@@ -50,6 +50,16 @@
 					"path": "web/src/components/designer/nav.tsx",
 					"type": "registry:file",
 					"target": "~/web/src/components/designer/nav.tsx"
+				},
+				{
+					"path": "web/src/components/designer/prototype-link.tsx",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/prototype-link.tsx"
+				},
+				{
+					"path": "web/src/components/designer/prototype.ts",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/prototype.ts"
 				},
 				{
 					"path": "web/src/components/designer/search.ts",
@@ -112,6 +122,11 @@
 					"target": "~/web/src/components/designer/stage/minimap.tsx"
 				},
 				{
+					"path": "web/src/components/designer/stage/prototype-connections.tsx",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/stage/prototype-connections.tsx"
+				},
+				{
 					"path": "web/src/components/designer/stage/refs.tsx",
 					"type": "registry:file",
 					"target": "~/web/src/components/designer/stage/refs.tsx"
@@ -135,6 +150,11 @@
 					"path": "web/src/components/designer/ui/entry.tsx",
 					"type": "registry:file",
 					"target": "~/web/src/components/designer/ui/entry.tsx"
+				},
+				{
+					"path": "web/src/components/designer/ui/flow.tsx",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/ui/flow.tsx"
 				},
 				{
 					"path": "web/src/components/designer/ui/gallery.tsx",
@@ -197,6 +217,11 @@
 					"target": "~/web/src/routes/[_]design/c.$canvasId.tsx"
 				},
 				{
+					"path": "web/src/routes/[_]design/flow.tsx",
+					"type": "registry:file",
+					"target": "~/web/src/routes/[_]design/flow.tsx"
+				},
+				{
 					"path": "web/src/routes/[_]design/index.tsx",
 					"type": "registry:file",
 					"target": "~/web/src/routes/[_]design/index.tsx"
@@ -207,7 +232,7 @@
 					"target": "~/web/src/routes/[_]design/wall.tsx"
 				}
 			],
-			"docs": "Run `bun run routegen`, start the app, and open `/_design`. The installer does not modify the product-owned root route; see the Design Canvas README for the optional floating entry integration."
+			"docs": "Run `bun run routegen`, start the app, and open `/_design`. Prototype transitions are visible at `/_design/flow`. The installer does not modify the product-owned root route; see the Design Canvas README for the optional floating entry integration."
 		}
 	]
 }

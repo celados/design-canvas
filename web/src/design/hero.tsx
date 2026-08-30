@@ -1,3 +1,5 @@
+import { PrototypeLink } from '@/components/designer/prototype-link'
+
 const NAV_LINKS = ['Product', 'Changelog', 'Docs', 'Pricing']
 
 function Nav() {
@@ -108,9 +110,11 @@ export function Hero() {
 						your whole stack can read — designers, engineers, and agents alike.
 					</p>
 					<div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-						<span className="rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white">
-							Start designing
-						</span>
+						<PrototypeLink id="hero-start" to="pricing" label="Explore pricing">
+							<span className="rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white">
+								Start designing
+							</span>
+						</PrototypeLink>
 						<span className="rounded-lg border border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-700">
 							Watch the film ↗
 						</span>
@@ -179,9 +183,11 @@ export function HeroMobile() {
 						can read.
 					</p>
 					<div className="mt-7 flex w-full flex-col gap-2.5">
-						<span className="rounded-lg bg-neutral-900 px-5 py-3 text-sm font-semibold text-white">
-							Start designing
-						</span>
+						<PrototypeLink id="hero-start" to="pricing" label="Explore pricing">
+							<span className="rounded-lg bg-neutral-900 px-5 py-3 text-sm font-semibold text-white">
+								Start designing
+							</span>
+						</PrototypeLink>
 						<span className="rounded-lg border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700">
 							Watch the film ↗
 						</span>

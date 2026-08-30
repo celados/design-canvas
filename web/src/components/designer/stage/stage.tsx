@@ -1,4 +1,7 @@
-import type { PointerEvent as ReactPointerEvent } from 'react'
+import type {
+	MouseEvent as ReactMouseEvent,
+	PointerEvent as ReactPointerEvent,
+} from 'react'
 
 import {
 	createContext,
@@ -15,12 +18,14 @@ import type { CanvasDefinition } from '../api'
 import type { Camera, Rect, Size } from './camera'
 import type { PlacedItem } from './layout'
 
+import { readPrototypeIntent } from '../prototype'
 import { Annotator } from './annotate/annotator'
 import { Artboard } from './artboard'
 import { fitBounds, panBy, unionRects, zoomAtPoint } from './camera'
 import { Hud } from './hud'
 import { placedItemRect } from './layout'
 import { Minimap } from './minimap'
+import { PrototypeConnections } from './prototype-connections'
 import { ReferenceLayer } from './refs'
 
 // Three contexts with distinct invalidation rates: zoom changes rarely drive
@@ -61,6 +66,8 @@ type StageProps = {
 	onCameraMove?: (camera: Camera) => void
 	/** When set, the annotator (C) can pin comments on this canvas's artboards. */
 	canvas?: CanvasDefinition | undefined
+	showPrototypeConnections?: boolean
+	onPrototypeNavigate?: (canvasId: string, sourceViewId?: string) => void
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -82,6 +89,20 @@ export function Stage(props: StageProps) {
 	// Mirrored to state only for the cursor affordance; the hot paths keep
 	// reading the ref so keydown never re-renders the stage.
 	const [spaceHeld, setSpaceHeld] = useState(false)
+	const onPrototypeClick = useCallback(
+		(event: ReactMouseEvent<HTMLDivElement>) => {
+			if (!props.onPrototypeNavigate) return
+			const intent = readPrototypeIntent(
+				event.target,
+				event.metaKey || event.ctrlKey,
+			)
+			if (!intent) return
+			event.preventDefault()
+			event.stopPropagation()
+			props.onPrototypeNavigate(intent.canvasId, intent.sourceViewId)
+		},
+		[props.onPrototypeNavigate],
+	)
 
 	const cameraRef = useRef(camera)
 	cameraRef.current = camera
@@ -432,6 +453,7 @@ export function Stage(props: StageProps) {
 						className="dc-stage"
 						data-panning={panning || undefined}
 						data-space-pan={spaceHeld || undefined}
+						onClickCapture={onPrototypeClick}
 						onPointerDown={onPointerDown}
 						onPointerMove={onPointerMove}
 						onPointerUp={endDrag}
@@ -487,6 +509,12 @@ export function Stage(props: StageProps) {
 									/>
 								),
 							)}
+							{props.showPrototypeConnections ? (
+								<PrototypeConnections
+									items={props.items}
+									measured={props.measured}
+								/>
+							) : null}
 							<ReferenceLayer />
 						</div>
 						{size ? (

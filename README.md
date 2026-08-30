@@ -35,6 +35,29 @@ the optional floating Design entry outside the Canvas, lazy-load and render
 root route. Keeping this host edit explicit avoids overwriting product-owned
 root-route behavior.
 
+## Prototype flows
+
+Wrap an existing DOM element with `PrototypeLink` to declare a transition to
+another canvas. The adapter adds no wrapper, so the child must either be a DOM
+element or forward unknown DOM props.
+
+```tsx
+import { PrototypeLink } from '@/components/designer/prototype-link'
+
+export function HeroCta() {
+	return (
+		<PrototypeLink id="hero-pricing" to="pricing" label="Explore pricing">
+			<button type="button">View pricing</button>
+		</PrototypeLink>
+	)
+}
+```
+
+Open `/_design/flow` to see one representative artboard per canvas with the
+declared transitions. In Flow or a canvas page, use Command-click on macOS or
+Control-click elsewhere to follow a prototype link. A normal click remains
+owned by the rendered product surface.
+
 ## Develop
 
 ```bash

@@ -9,6 +9,7 @@ import {
 	useDesignNavigate,
 	useDesignSearch,
 } from '../nav'
+import { resolvePrototypeDestination } from '../prototype'
 import { artboardKey, layoutViews } from '../stage/layout'
 import { Stage } from '../stage/stage'
 import { DeviceSwitcher } from './device-switcher'
@@ -96,6 +97,21 @@ export function CanvasPage() {
 		[canvasId, navigate],
 	)
 
+	const onPrototypeNavigate = useCallback(
+		(targetCanvasId: string, sourceViewId?: string) => {
+			const destination = resolvePrototypeDestination(
+				canvases,
+				targetCanvasId,
+				sourceViewId,
+			)
+			if (!destination) return
+			navigate(`/_design/c/${destination.canvasId}`, {
+				search: destination.viewId ? { view: destination.viewId } : {},
+			})
+		},
+		[canvases, navigate],
+	)
+
 	// [ / ] step through canvases in registry order.
 	useEffect(() => {
 		if (!canvas) return
@@ -149,6 +165,7 @@ export function CanvasPage() {
 				fitKey={canvas.id}
 				onCameraMove={onCameraMove}
 				canvas={canvas}
+				onPrototypeNavigate={onPrototypeNavigate}
 			/>
 			<DeviceSwitcher
 				canvas={canvas}

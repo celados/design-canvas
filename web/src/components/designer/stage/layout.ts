@@ -4,6 +4,7 @@ import type { Rect } from './camera'
 export const COL_GAP = 72
 export const ROW_GAP = 120
 export const GROUP_GAP = 200
+export const FLOW_GAP = 240
 const GROUP_LABEL_H = 64
 const CANVAS_LABEL_H = 44
 const FALLBACK_HEIGHT = 780
@@ -50,6 +51,28 @@ export function layoutViews(canvas: CanvasDefinition): PlacedItem[] {
 			view,
 		})
 		x += view.width + COL_GAP
+	}
+	return items
+}
+
+/** Prototype overview: one representative view per canvas in registry order. */
+export function layoutFlow(definitions: CanvasDefinition[]): PlacedItem[] {
+	const items: PlacedItem[] = []
+	let x = 0
+	for (const canvas of definitions) {
+		const view = canvas.views[0]
+		if (!view) continue
+		items.push({
+			kind: 'artboard',
+			key: artboardKey(canvas.id, view.id),
+			x,
+			y: 0,
+			width: view.width,
+			canvas,
+			view,
+			labelPrefix: canvas.title,
+		})
+		x += view.width + FLOW_GAP
 	}
 	return items
 }

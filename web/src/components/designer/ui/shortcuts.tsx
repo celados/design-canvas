@@ -7,6 +7,7 @@ const SHORTCUTS: readonly { keys: string; action: string }[] = [
 	{ keys: '⌘-scroll / pinch', action: 'Zoom at cursor' },
 	{ keys: '⌘0', action: 'Zoom to fit' },
 	{ keys: '⌘1', action: 'Actual size (100%)' },
+	{ keys: '⌘ click', action: 'Follow prototype link' },
 	{ keys: 'C', action: 'Toggle annotate mode' },
 	{ keys: '?', action: 'Toggle this help' },
 ]
