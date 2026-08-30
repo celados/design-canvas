@@ -1,4 +1,5 @@
-import { Designer, viewport } from '@/components/designer'
+import { viewport } from '@/components/designer/api'
+import { Designer } from '@/components/designer/designer'
 
 import { Dashboard, DashboardMobile } from './dashboard'
 import { Hero, HeroMobile } from './hero'
