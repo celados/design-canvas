@@ -13,7 +13,7 @@ package dependency.
 Run this from a project created from `celados/templates/templates/tanstack-start`:
 
 ```bash
-bunx shadcn@latest add celados/design-canvas/tanstack-start#v0.2.0
+bunx shadcn@latest add celados/design-canvas/tanstack-start#v0.3.0
 bun run routegen
 ```
 

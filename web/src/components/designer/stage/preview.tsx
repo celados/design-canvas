@@ -3,9 +3,9 @@ import type { ReactNode } from 'react'
 import {
 	createContext,
 	memo,
-	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 	useSyncExternalStore,
@@ -14,61 +14,104 @@ import {
 import type { CanvasView } from '../api'
 import type { PlacedArtboard } from './layout'
 import type {
-	ArtboardPreviewRequest,
 	ArtboardPreviewState,
-	ArtboardPreviewStore,
+	ArtboardSnapshotProvider as ArtboardSnapshotProviderValue,
+	ArtboardSnapshotRequest,
+	ArtboardSnapshotStore,
 } from './preview-store'
 
 import { ArtboardErrorBoundary } from './artboard-error-boundary'
-import { createArtboardPreviewStore } from './preview-store'
+import { previewPixelRatio } from './preview-raster'
+import { createArtboardSnapshotStore } from './preview-store'
 import { useStageZoom } from './stage'
 
-const PreviewStoreContext = createContext<ArtboardPreviewStore | null>(null)
+type SnapshotDiagnostics = {
+	read: ArtboardSnapshotStore['readMetrics']
+}
 
-export function ArtboardPreviewProvider(props: { children: ReactNode }) {
-	const [store] = useState(createArtboardPreviewStore)
+declare global {
+	interface Window {
+		__DESIGN_CANVAS_SNAPSHOTS__?: SnapshotDiagnostics
+	}
+}
+
+const CAPTURE_TIMEOUT_MS = 12_000
+const SnapshotProviderContext =
+	createContext<ArtboardSnapshotProviderValue | null>(null)
+
+export function ArtboardSnapshotProvider(props: { children: ReactNode }) {
+	const [store] = useState(createArtboardSnapshotStore)
 
 	useEffect(() => () => store.dispose(), [store])
+	useEffect(() => {
+		if (!import.meta.env.DEV) return
+		const diagnostics = { read: store.readMetrics }
+		window.__DESIGN_CANVAS_SNAPSHOTS__ = diagnostics
+		return () => {
+			if (window.__DESIGN_CANVAS_SNAPSHOTS__ === diagnostics) {
+				delete window.__DESIGN_CANVAS_SNAPSHOTS__
+			}
+		}
+	}, [store])
 
 	return (
-		<PreviewStoreContext.Provider value={store}>
+		<SnapshotProviderContext.Provider value={store}>
 			{props.children}
 			<PreviewCaptureHost store={store} />
-		</PreviewStoreContext.Provider>
+		</SnapshotProviderContext.Provider>
 	)
 }
 
-function usePreviewStore(): ArtboardPreviewStore {
-	const store = useContext(PreviewStoreContext)
-	if (!store) {
+function useSnapshotProvider(): ArtboardSnapshotProviderValue {
+	const provider = useContext(SnapshotProviderContext)
+	if (!provider) {
 		throw new Error(
-			'useArtboardPreview must be used under <ArtboardPreviewProvider>',
+			'useArtboardPreview must be used under <ArtboardSnapshotProvider>',
 		)
 	}
-	return store
+	return provider
 }
 
 function useArtboardPreview(
 	key: string,
 	view: CanvasView,
 	enabled = true,
+	priority = 0,
 ): ArtboardPreviewState {
-	const store = usePreviewStore()
-	const subscribe = useCallback(
-		(listener: () => void) => store.subscribe(key, listener),
-		[key, store],
+	const provider = useSnapshotProvider()
+	const version = view.previewVersion ?? view
+	const connection = useMemo(
+		() => provider.connect({ key, version, view }),
+		[key, provider, version, view],
 	)
-	const read = useCallback(() => store.read(key, view), [key, store, view])
-	const state = useSyncExternalStore(subscribe, read, read)
+	const state = useSyncExternalStore(
+		connection.subscribe,
+		connection.read,
+		connection.read,
+	)
 
 	useEffect(() => {
-		if (enabled) store.request(key, view)
-	}, [enabled, key, store, view])
+		if (!enabled) return
+		return connection.activate(priority)
+	}, [connection, enabled])
+	useEffect(() => {
+		if (enabled) connection.updatePriority(priority)
+	}, [connection, enabled, priority])
+	useEffect(() => {
+		if (!enabled || state.status !== 'failed' || !document.hidden) return
+		const retryWhenVisible = () => {
+			if (!document.hidden) connection.retry()
+		}
+		document.addEventListener('visibilitychange', retryWhenVisible)
+		return () =>
+			document.removeEventListener('visibilitychange', retryWhenVisible)
+	}, [connection, enabled, state.status])
 
 	return state
 }
 
-function PreviewCaptureHost(props: { store: ArtboardPreviewStore }) {
+function PreviewCaptureHost(props: { store: ArtboardSnapshotStore }) {
+	const fontEmbedCache = useRef(new Map<string, Promise<string>>())
 	const request = useSyncExternalStore(
 		props.store.subscribeActive,
 		props.store.readActive,
@@ -79,15 +122,17 @@ function PreviewCaptureHost(props: { store: ArtboardPreviewStore }) {
 			key={request.id}
 			request={request}
 			store={props.store}
+			fontEmbedCache={fontEmbedCache.current}
 		/>
 	) : null
 }
 
 function PreviewCaptureSurface(props: {
-	request: ArtboardPreviewRequest
-	store: ArtboardPreviewStore
+	request: ArtboardSnapshotRequest
+	store: ArtboardSnapshotStore
+	fontEmbedCache: Map<string, Promise<string>>
 }) {
-	const { request, store } = props
+	const { fontEmbedCache, request, store } = props
 	const frameRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
@@ -97,19 +142,11 @@ function PreviewCaptureSurface(props: {
 
 		const capture = async () => {
 			try {
-				await waitForCaptureAssets(frame)
-				const height = Math.ceil(frame.offsetHeight)
-				const { toBlob } = await import('html-to-image')
-				// Overview never needs a full-density desktop raster. Bounding its
-				// width keeps decoded-image memory predictable across large walls.
-				const pixelRatio = Math.min(1, 1200 / request.view.width)
-				const blob = await toBlob(frame, {
-					pixelRatio,
-					backgroundColor: request.view.dark ? '#09090b' : '#ffffff',
-					cacheBust: true,
-				})
-				if (!blob) throw new Error('Artboard preview produced an empty image')
-				const src = URL.createObjectURL(blob)
+				const result = await withTimeout(
+					captureFrame(frame, request, fontEmbedCache),
+					CAPTURE_TIMEOUT_MS,
+				)
+				const src = URL.createObjectURL(result.blob)
 				if (cancelled) {
 					URL.revokeObjectURL(src)
 					return
@@ -117,7 +154,7 @@ function PreviewCaptureSurface(props: {
 				store.resolve(request, {
 					src,
 					width: request.view.width,
-					height,
+					height: result.height,
 				})
 			} catch (error) {
 				if (!cancelled) store.reject(request, error)
@@ -128,7 +165,7 @@ function PreviewCaptureSurface(props: {
 		return () => {
 			cancelled = true
 		}
-	}, [request, store])
+	}, [fontEmbedCache, request, store])
 
 	return (
 		<div
@@ -158,6 +195,38 @@ function PreviewCaptureSurface(props: {
 	)
 }
 
+async function captureFrame(
+	frame: HTMLElement,
+	request: ArtboardSnapshotRequest,
+	fontEmbedCache: Map<string, Promise<string>>,
+): Promise<{ blob: Blob; height: number }> {
+	await waitForCaptureAssets(frame)
+	const height = Math.ceil(frame.offsetHeight)
+	const htmlToImage = await import('html-to-image')
+	const fontKey = readFontKey(frame)
+	let fontEmbedCSS = fontEmbedCache.get(fontKey)
+	if (!fontEmbedCSS) {
+		fontEmbedCSS = htmlToImage.getFontEmbedCSS(frame)
+		fontEmbedCache.set(fontKey, fontEmbedCSS)
+		fontEmbedCSS.catch(() => fontEmbedCache.delete(fontKey))
+	}
+	const blob = await htmlToImage.toBlob(frame, {
+		pixelRatio: previewPixelRatio(request.view.width, height),
+		backgroundColor: request.view.dark ? '#09090b' : '#ffffff',
+		fontEmbedCSS: await fontEmbedCSS,
+	})
+	if (!blob) throw new Error('Artboard preview produced an empty image')
+	return { blob, height }
+}
+
+function readFontKey(frame: HTMLElement): string {
+	const fonts = new Set<string>()
+	for (const element of [frame, ...frame.querySelectorAll<HTMLElement>('*')]) {
+		fonts.add(getComputedStyle(element).fontFamily)
+	}
+	return [...fonts].sort().join('\n')
+}
+
 async function waitForCaptureAssets(frame: HTMLElement): Promise<void> {
 	const images = [...frame.querySelectorAll('img')]
 	const assets = Promise.allSettled([
@@ -177,14 +246,34 @@ function nextPaint(): Promise<void> {
 	return new Promise((resolve) => requestAnimationFrame(() => resolve()))
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+	return new Promise((resolve, reject) => {
+		const timeout = setTimeout(
+			() => reject(new Error('Artboard preview capture timed out')),
+			timeoutMs,
+		)
+		promise.then(
+			(value) => {
+				clearTimeout(timeout)
+				resolve(value)
+			},
+			(error: unknown) => {
+				clearTimeout(timeout)
+				reject(error)
+			},
+		)
+	})
+}
+
 export const PreviewArtboard = memo(function PreviewArtboard(props: {
 	item: PlacedArtboard
 	fallbackHeight: number
+	priority: number
 	onMeasure: (key: string, height: number) => void
 }) {
 	const { item } = props
 	const zoom = useStageZoom()
-	const state = useArtboardPreview(item.key, item.view)
+	const state = useArtboardPreview(item.key, item.view, true, props.priority)
 	const preview = state.status === 'ready' ? state.preview : null
 	const height = preview?.height ?? props.fallbackHeight
 	const compact = zoom < 0.35
@@ -253,8 +342,14 @@ export function ArtboardPreviewImage(props: {
 	previewKey: string
 	view: CanvasView
 	enabled?: boolean
+	priority?: number
 }) {
-	const state = useArtboardPreview(props.previewKey, props.view, props.enabled)
+	const state = useArtboardPreview(
+		props.previewKey,
+		props.view,
+		props.enabled,
+		props.priority,
+	)
 	return state.status === 'ready' ? (
 		<img
 			src={state.preview.src}

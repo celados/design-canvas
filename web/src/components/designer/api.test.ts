@@ -48,6 +48,27 @@ describe('resolveDesignerPages', () => {
 		expect(canvas.views[0]).toMatchObject({ id: 'mobile', width: 390 })
 	})
 
+	it('lets a variant override the page preview revision', () => {
+		const [canvas] = resolveDesignerPages([
+			page({
+				previewVersion: 'page-1',
+				variants: [
+					{ name: 'desktop', component: leaf },
+					{
+						name: 'mobile',
+						previewVersion: 'mobile-2',
+						component: leaf,
+					},
+				],
+			}),
+		])
+
+		expect(canvas.views.map((view) => view.previewVersion)).toEqual([
+			'page-1',
+			'mobile-2',
+		])
+	})
+
 	it('rejects a page with neither component nor variants', () => {
 		expect(() => resolveDesignerPages([page({})])).toThrow(/variants/)
 	})

@@ -100,13 +100,22 @@ function CanvasCard(props: { canvas: CanvasDefinition }) {
 	const firstView = canvas.views[0]
 	const frameRef = useRef<HTMLDivElement>(null)
 	// Queue capture only near the viewport; cards never mount their own live tree.
-	const [inView, setInView] = useState(false)
+	const [previewPriority, setPreviewPriority] = useState<number | null>(null)
 
 	useEffect(() => {
 		const frame = frameRef.current
 		if (!frame) return
 		const visibility = new IntersectionObserver(
-			(entries) => setInView(entries.some((entry) => entry.isIntersecting)),
+			(entries) => {
+				const visible = entries.find((entry) => entry.isIntersecting)
+				if (!visible) {
+					setPreviewPriority(null)
+					return
+				}
+				const cardCenter =
+					visible.boundingClientRect.top + visible.boundingClientRect.height / 2
+				setPreviewPriority(Math.abs(cardCenter - window.innerHeight / 2))
+			},
 			{ rootMargin: '400px' },
 		)
 		visibility.observe(frame)
@@ -122,7 +131,8 @@ function CanvasCard(props: { canvas: CanvasDefinition }) {
 					<ArtboardPreviewImage
 						previewKey={artboardKey(canvas.id, firstView.id)}
 						view={firstView}
-						enabled={inView}
+						enabled={previewPriority !== null}
+						priority={previewPriority ?? 0}
 					/>
 				) : null}
 			</div>

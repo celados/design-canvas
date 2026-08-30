@@ -16,6 +16,8 @@ export type DesignerPageVariant = {
 	name: string
 	label?: string
 	width?: number
+	/** Change this value when an otherwise stable preview should be recaptured. */
+	previewVersion?: string
 	/**
 	 * Explicit device class for the canvas switcher; when omitted the class is
 	 * inferred from the width band.
@@ -33,6 +35,8 @@ type DesignerPageBase = {
 	group?: string
 	summary?: string
 	tags?: string[]
+	/** Default preview revision for this page and all variants. */
+	previewVersion?: string
 }
 
 /**
@@ -55,6 +59,7 @@ export type CanvasView = {
 	label: string
 	summary?: string
 	width: number
+	previewVersion?: string
 	device?: DeviceName
 	minHeight?: number
 	dark?: boolean
@@ -106,6 +111,7 @@ export function resolveDesignerPages(
 				id: variant.name,
 				label: variant.label ?? variant.name,
 				width: variant.width ?? viewport.desktop,
+				previewVersion: variant.previewVersion ?? page.previewVersion,
 				device: variant.device,
 				minHeight: variant.minHeight,
 				dark: variant.dark,

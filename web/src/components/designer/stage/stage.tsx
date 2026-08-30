@@ -128,7 +128,7 @@ export function Stage(props: StageProps) {
 		() => props.items.filter((item) => item.kind === 'artboard'),
 		[props.items],
 	)
-	const visiblePreviewKeys = useMemo(() => {
+	const visiblePreviewPriorities = useMemo(() => {
 		if (props.artboardMode !== 'preview' || !size) return null
 		const visible = visibleWorldRect(camera, size)
 		const overscan = 320 / camera.zoom
@@ -138,12 +138,16 @@ export function Stage(props: StageProps) {
 			width: visible.width + overscan * 2,
 			height: visible.height + overscan * 2,
 		}
-		return new Set(
-			artboards
-				.filter((item) =>
-					rectsIntersect(placedItemRect(item, props.measured), expanded),
-				)
-				.map((item) => item.key),
+		const centerX = visible.x + visible.width / 2
+		const centerY = visible.y + visible.height / 2
+		return new Map(
+			artboards.flatMap((item) => {
+				const rect = placedItemRect(item, props.measured)
+				if (!rectsIntersect(rect, expanded)) return []
+				const dx = rect.x + rect.width / 2 - centerX
+				const dy = rect.y + rect.height / 2 - centerY
+				return [[item.key, dx * dx + dy * dy] as const]
+			}),
 		)
 	}, [artboards, camera, props.artboardMode, props.measured, size])
 
@@ -529,10 +533,11 @@ export function Stage(props: StageProps) {
 										</span>
 									</div>
 								) : props.artboardMode === 'preview' ? (
-									visiblePreviewKeys?.has(item.key) ? (
+									visiblePreviewPriorities?.has(item.key) ? (
 										<PreviewArtboard
 											key={item.key}
 											item={item}
+											priority={visiblePreviewPriorities.get(item.key) ?? 0}
 											fallbackHeight={
 												placedItemRect(item, props.measured).height
 											}
