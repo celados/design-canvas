@@ -12,12 +12,20 @@ export type ViewportName = keyof typeof viewport
 
 export type DeviceName = 'desktop' | 'tablet' | 'mobile'
 
+export type DesignerPagePreview = {
+	src: string
+	width: number
+	height: number
+}
+
 export type DesignerPageVariant = {
 	name: string
 	label?: string
 	width?: number
 	/** Change this value when an otherwise stable preview should be recaptured. */
 	previewVersion?: string
+	/** Pre-generated overview pixels; avoids mounting this view in the Wall. */
+	preview?: DesignerPagePreview
 	/**
 	 * Explicit device class for the canvas switcher; when omitted the class is
 	 * inferred from the width band.
@@ -37,6 +45,7 @@ type DesignerPageBase = {
 	tags?: string[]
 	/** Default preview revision for this page and all variants. */
 	previewVersion?: string
+	preview?: DesignerPagePreview
 }
 
 /**
@@ -60,6 +69,7 @@ export type CanvasView = {
 	summary?: string
 	width: number
 	previewVersion?: string
+	preview?: DesignerPagePreview
 	device?: DeviceName
 	minHeight?: number
 	dark?: boolean
@@ -112,6 +122,7 @@ export function resolveDesignerPages(
 				label: variant.label ?? variant.name,
 				width: variant.width ?? viewport.desktop,
 				previewVersion: variant.previewVersion ?? page.previewVersion,
+				preview: variant.preview ?? page.preview,
 				device: variant.device,
 				minHeight: variant.minHeight,
 				dark: variant.dark,

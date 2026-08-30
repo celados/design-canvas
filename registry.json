@@ -102,6 +102,11 @@
 					"target": "~/web/src/components/designer/stage/artboard.tsx"
 				},
 				{
+					"path": "web/src/components/designer/stage/artboard-lod.ts",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/stage/artboard-lod.ts"
+				},
+				{
 					"path": "web/src/components/designer/stage/camera.ts",
 					"type": "registry:file",
 					"target": "~/web/src/components/designer/stage/camera.ts"
@@ -125,6 +130,11 @@
 					"path": "web/src/components/designer/stage/prototype-connections.tsx",
 					"type": "registry:file",
 					"target": "~/web/src/components/designer/stage/prototype-connections.tsx"
+				},
+				{
+					"path": "web/src/components/designer/stage/preview-cache.ts",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/stage/preview-cache.ts"
 				},
 				{
 					"path": "web/src/components/designer/stage/preview-store.ts",

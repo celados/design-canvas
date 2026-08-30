@@ -1,6 +1,6 @@
-const MAX_RASTER_WIDTH = 1200
-const MAX_RASTER_DIMENSION = 8192
-const MAX_RASTER_PIXELS = 12_000_000
+const MAX_RASTER_WIDTH = 480
+const MAX_RASTER_DIMENSION = 4096
+const MAX_RASTER_PIXELS = 2_000_000
 
 /**
  * Preserve the full artboard while bounding decoded bitmap cost and browser

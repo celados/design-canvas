@@ -166,6 +166,7 @@ export function CanvasPage() {
 				onCameraMove={onCameraMove}
 				canvas={canvas}
 				onPrototypeNavigate={onPrototypeNavigate}
+				artboardMode={search.lod === 'live' ? 'live' : 'adaptive'}
 			/>
 			<DeviceSwitcher
 				canvas={canvas}

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import {
 	createContext,
 	memo,
+	useCallback,
 	useContext,
 	useEffect,
 	useMemo,
@@ -14,6 +15,7 @@ import {
 import type { CanvasView } from '../api'
 import type { PlacedArtboard } from './layout'
 import type {
+	ArtboardSnapshotCache,
 	ArtboardPreviewState,
 	ArtboardSnapshotProvider as ArtboardSnapshotProviderValue,
 	ArtboardSnapshotRequest,
@@ -21,6 +23,7 @@ import type {
 } from './preview-store'
 
 import { ArtboardErrorBoundary } from './artboard-error-boundary'
+import { createBrowserArtboardSnapshotCache } from './preview-cache'
 import { previewPixelRatio } from './preview-raster'
 import { createArtboardSnapshotStore } from './preview-store'
 import { useStageZoom } from './stage'
@@ -36,13 +39,37 @@ declare global {
 }
 
 const CAPTURE_TIMEOUT_MS = 12_000
+const INITIAL_CAPTURE_DELAY_MS = 1_200
+const CAPTURE_COOLDOWN_MS = 150
 const SnapshotProviderContext =
 	createContext<ArtboardSnapshotProviderValue | null>(null)
 
-export function ArtboardSnapshotProvider(props: { children: ReactNode }) {
-	const [store] = useState(createArtboardSnapshotStore)
+export function ArtboardSnapshotProvider(props: {
+	children: ReactNode
+	provider?: ArtboardSnapshotProviderValue
+	cache?: ArtboardSnapshotCache | null
+}) {
+	const [store] = useState(() =>
+		createArtboardSnapshotStore({
+			cache:
+				props.cache === null
+					? undefined
+					: (props.cache ?? createBrowserArtboardSnapshotCache()),
+			initialCaptureDelayMs: INITIAL_CAPTURE_DELAY_MS,
+			captureCooldownMs: CAPTURE_COOLDOWN_MS,
+		}),
+	)
+	const provider = props.provider ?? store
 
 	useEffect(() => () => store.dispose(), [store])
+	useEffect(() => {
+		const resumeWhenVisible = () => {
+			if (!document.hidden) store.deferCaptures(0)
+		}
+		document.addEventListener('visibilitychange', resumeWhenVisible)
+		return () =>
+			document.removeEventListener('visibilitychange', resumeWhenVisible)
+	}, [store])
 	useEffect(() => {
 		if (!import.meta.env.DEV) return
 		const diagnostics = { read: store.readMetrics }
@@ -55,10 +82,18 @@ export function ArtboardSnapshotProvider(props: { children: ReactNode }) {
 	}, [store])
 
 	return (
-		<SnapshotProviderContext.Provider value={store}>
+		<SnapshotProviderContext.Provider value={provider}>
 			{props.children}
-			<PreviewCaptureHost store={store} />
+			{props.provider ? null : <PreviewCaptureHost store={store} />}
 		</SnapshotProviderContext.Provider>
+	)
+}
+
+export function useSnapshotCaptureDeferral(): (delayMs?: number) => void {
+	const provider = useSnapshotProvider()
+	return useCallback(
+		(delayMs = 350) => provider.deferCaptures?.(delayMs),
+		[provider],
 	)
 }
 
@@ -141,23 +176,25 @@ function PreviewCaptureSurface(props: {
 		let cancelled = false
 
 		const capture = async () => {
+			const pendingCapture = captureFrame(frame, request, fontEmbedCache)
 			try {
-				const result = await withTimeout(
-					captureFrame(frame, request, fontEmbedCache),
-					CAPTURE_TIMEOUT_MS,
-				)
+				const result = await withTimeout(pendingCapture, CAPTURE_TIMEOUT_MS)
 				const src = URL.createObjectURL(result.blob)
 				if (cancelled) {
 					URL.revokeObjectURL(src)
 					return
 				}
-				store.resolve(request, {
-					src,
-					width: request.view.width,
-					height: result.height,
-				})
+				store.resolve(
+					request,
+					{
+						src,
+						width: request.view.width,
+						height: result.height,
+					},
+					result.blob,
+				)
 			} catch (error) {
-				if (!cancelled) store.reject(request, error)
+				if (!cancelled) store.reject(request, error, pendingCapture)
 			}
 		}
 

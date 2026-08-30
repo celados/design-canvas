@@ -1,6 +1,16 @@
 export { viewport } from './api'
-export type { DesignerPage, DesignerPageVariant } from './api'
+export type {
+	DesignerPage,
+	DesignerPagePreview,
+	DesignerPageVariant,
+} from './api'
 export { Designer } from './designer'
+export type { DesignerProps } from './designer'
+export type {
+	ArtboardSnapshotCache,
+	ArtboardSnapshotProvider,
+	CachedArtboardSnapshot,
+} from './stage/preview-store'
 export { PrototypeLink } from './prototype-link'
 export type { PrototypeLinkProps } from './prototype-link'
 export { DesignEntry } from './ui/entry'

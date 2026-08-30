@@ -69,6 +69,13 @@ describe('resolveDesignerPages', () => {
 		])
 	})
 
+	it('preserves pre-generated preview dimensions', () => {
+		const preview = { src: '/preview.webp', width: 1440, height: 900 }
+		const [canvas] = resolveDesignerPages([page({ component: leaf, preview })])
+
+		expect(canvas?.views[0]?.preview).toEqual(preview)
+	})
+
 	it('rejects a page with neither component nor variants', () => {
 		expect(() => resolveDesignerPages([page({})])).toThrow(/variants/)
 	})

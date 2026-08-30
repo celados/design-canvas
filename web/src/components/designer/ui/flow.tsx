@@ -48,6 +48,7 @@ export function FlowPage() {
 			fitKey="prototype-flow"
 			showPrototypeConnections
 			onPrototypeNavigate={onPrototypeNavigate}
+			artboardMode="adaptive"
 		/>
 	)
 }

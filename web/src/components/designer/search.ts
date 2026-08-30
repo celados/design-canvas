@@ -3,6 +3,7 @@ export type StageSearch = {
 	y?: number
 	z?: number
 	view?: string
+	lod?: 'live'
 }
 
 function asNumber(value: unknown): number | undefined {
@@ -22,5 +23,6 @@ export function validateStageSearch(
 		...(y !== undefined ? { y } : {}),
 		...(z !== undefined ? { z } : {}),
 		...(typeof search.view === 'string' ? { view: search.view } : {}),
+		...(search.lod === 'live' ? { lod: 'live' as const } : {}),
 	}
 }

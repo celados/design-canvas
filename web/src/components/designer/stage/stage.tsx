@@ -21,18 +21,12 @@ import type { PlacedItem } from './layout'
 import { readPrototypeIntent } from '../prototype'
 import { Annotator } from './annotate/annotator'
 import { Artboard } from './artboard'
-import {
-	fitBounds,
-	panBy,
-	rectsIntersect,
-	unionRects,
-	visibleWorldRect,
-	zoomAtPoint,
-} from './camera'
+import { createArtboardRenderPlan, selectArtboardLod } from './artboard-lod'
+import { fitBounds, panBy, unionRects, zoomAtPoint } from './camera'
 import { Hud } from './hud'
 import { placedItemRect } from './layout'
 import { Minimap } from './minimap'
-import { PreviewArtboard } from './preview'
+import { PreviewArtboard, useSnapshotCaptureDeferral } from './preview'
 import { PrototypeConnections } from './prototype-connections'
 import { ReferenceLayer } from './refs'
 
@@ -59,6 +53,7 @@ const StageCameraContext = createContext<Camera>({ x: 0, y: 0, zoom: 1 })
 export const useStageCamera = () => useContext(StageCameraContext)
 
 const FIT_PADDING = 120
+const LOD_SETTLE_MS = 180
 
 type StageProps = {
 	items: PlacedItem[]
@@ -76,7 +71,7 @@ type StageProps = {
 	canvas?: CanvasDefinition | undefined
 	showPrototypeConnections?: boolean
 	onPrototypeNavigate?: (canvasId: string, sourceViewId?: string) => void
-	artboardMode?: 'live' | 'preview'
+	artboardMode?: 'adaptive' | 'live' | 'preview'
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -90,8 +85,14 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 export function Stage(props: StageProps) {
 	const containerRef = useRef<HTMLDivElement>(null)
+	const deferSnapshots = useSnapshotCaptureDeferral()
+	const artboardMode = props.artboardMode ?? 'adaptive'
 	const [camera, setCameraState] = useState<Camera>(
 		() => props.initialCamera ?? { x: 0, y: 0, zoom: 0.4 },
+	)
+	const [lodCamera, setLodCamera] = useState(camera)
+	const [adaptiveLod, setAdaptiveLod] = useState(() =>
+		selectArtboardLod(undefined, camera.zoom),
 	)
 	const [size, setSize] = useState<Size | null>(null)
 	const [panning, setPanning] = useState(false)
@@ -128,28 +129,44 @@ export function Stage(props: StageProps) {
 		() => props.items.filter((item) => item.kind === 'artboard'),
 		[props.items],
 	)
-	const visiblePreviewPriorities = useMemo(() => {
-		if (props.artboardMode !== 'preview' || !size) return null
-		const visible = visibleWorldRect(camera, size)
-		const overscan = 320 / camera.zoom
-		const expanded = {
-			x: visible.x - overscan,
-			y: visible.y - overscan,
-			width: visible.width + overscan * 2,
-			height: visible.height + overscan * 2,
-		}
-		const centerX = visible.x + visible.width / 2
-		const centerY = visible.y + visible.height / 2
-		return new Map(
-			artboards.flatMap((item) => {
-				const rect = placedItemRect(item, props.measured)
-				if (!rectsIntersect(rect, expanded)) return []
-				const dx = rect.x + rect.width / 2 - centerX
-				const dy = rect.y + rect.height / 2 - centerY
-				return [[item.key, dx * dx + dy * dy] as const]
-			}),
-		)
-	}, [artboards, camera, props.artboardMode, props.measured, size])
+	const lodCandidates = useMemo(
+		() =>
+			artboards.map((item) => ({
+				key: item.key,
+				rect: placedItemRect(item, props.measured),
+			})),
+		[artboards, props.measured],
+	)
+
+	useEffect(() => {
+		if (artboardMode !== 'adaptive') return
+		const timeout = setTimeout(() => {
+			setLodCamera(camera)
+			setAdaptiveLod((current) => selectArtboardLod(current, camera.zoom))
+		}, LOD_SETTLE_MS)
+		return () => clearTimeout(timeout)
+	}, [artboardMode, camera])
+
+	const artboardRenderPlan = useMemo(() => {
+		if (!size || artboardMode === 'live') return null
+		const adaptive = artboardMode === 'adaptive'
+		return createArtboardRenderPlan({
+			camera,
+			liveCamera: adaptive ? lodCamera : camera,
+			viewport: size,
+			candidates: lodCandidates,
+			lod: adaptive ? adaptiveLod : 'preview',
+			focusKey: props.focusKey,
+		})
+	}, [
+		adaptiveLod,
+		camera,
+		lodCamera,
+		lodCandidates,
+		artboardMode,
+		props.focusKey,
+		size,
+	])
 
 	const bounds = useMemo(
 		() =>
@@ -237,6 +254,8 @@ export function Stage(props: StageProps) {
 			cancelAnimationFrame(frameRef.current)
 			cameraRef.current = props.initialCamera
 			setCameraState(props.initialCamera)
+			setLodCamera(props.initialCamera)
+			setAdaptiveLod(selectArtboardLod(undefined, props.initialCamera.zoom))
 			return
 		}
 
@@ -255,6 +274,8 @@ export function Stage(props: StageProps) {
 		cancelAnimationFrame(frameRef.current)
 		cameraRef.current = next
 		setCameraState(next)
+		setLodCamera(next)
+		setAdaptiveLod(selectArtboardLod(undefined, next.zoom))
 	}, [
 		props.fitKey,
 		props.focusKey,
@@ -272,6 +293,7 @@ export function Stage(props: StageProps) {
 		if (!container) return
 		const onWheel = (event: WheelEvent) => {
 			event.preventDefault()
+			deferSnapshots()
 			const unit = event.deltaMode === 1 ? 16 : 1
 			const rect = container.getBoundingClientRect()
 			const cx = event.clientX - rect.left
@@ -290,7 +312,7 @@ export function Stage(props: StageProps) {
 		}
 		container.addEventListener('wheel', onWheel, { passive: false })
 		return () => container.removeEventListener('wheel', onWheel)
-	}, [scheduleCamera])
+	}, [deferSnapshots, scheduleCamera])
 
 	// Space-held and middle-drag pan anywhere; primary-drag pans from empty
 	// stage only so artboard content stays interactive.
@@ -314,6 +336,7 @@ export function Stage(props: StageProps) {
 				(event.button === 0 && !onArtboard)
 			if (!mayPan) return
 			event.preventDefault()
+			deferSnapshots()
 			event.currentTarget.setPointerCapture(event.pointerId)
 			drag.current = {
 				pointerId: event.pointerId,
@@ -322,7 +345,7 @@ export function Stage(props: StageProps) {
 			}
 			setPanning(true)
 		},
-		[],
+		[deferSnapshots],
 	)
 
 	const onPointerMove = useCallback(
@@ -333,16 +356,21 @@ export function Stage(props: StageProps) {
 			const dy = event.clientY - active.lastY
 			active.lastX = event.clientX
 			active.lastY = event.clientY
+			deferSnapshots()
 			scheduleCamera((camera) => panBy(camera, dx, dy))
 		},
-		[scheduleCamera],
+		[deferSnapshots, scheduleCamera],
 	)
 
-	const endDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-		if (drag.current?.pointerId !== event.pointerId) return
-		drag.current = null
-		setPanning(false)
-	}, [])
+	const endDrag = useCallback(
+		(event: ReactPointerEvent<HTMLDivElement>) => {
+			if (drag.current?.pointerId !== event.pointerId) return
+			drag.current = null
+			deferSnapshots(500)
+			setPanning(false)
+		},
+		[deferSnapshots],
+	)
 
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
@@ -532,22 +560,36 @@ export function Stage(props: StageProps) {
 											{item.text}
 										</span>
 									</div>
-								) : props.artboardMode === 'preview' ? (
-									visiblePreviewPriorities?.has(item.key) ? (
+								) : artboardRenderPlan ? (
+									artboardRenderPlan.get(item.key)?.lod === 'preview' ? (
 										<PreviewArtboard
 											key={item.key}
 											item={item}
-											priority={visiblePreviewPriorities.get(item.key) ?? 0}
+											priority={artboardRenderPlan.get(item.key)?.priority ?? 0}
 											fallbackHeight={
 												placedItemRect(item, props.measured).height
 											}
 											onMeasure={props.onMeasure}
 										/>
+									) : artboardRenderPlan.get(item.key)?.lod === 'live' ? (
+										<Artboard
+											key={item.key}
+											item={item}
+											onMeasure={props.onMeasure}
+										/>
 									) : null
-								) : (
+								) : artboardMode === 'live' ? (
 									<Artboard
 										key={item.key}
 										item={item}
+										onMeasure={props.onMeasure}
+									/>
+								) : (
+									<PreviewArtboard
+										key={item.key}
+										item={item}
+										priority={0}
+										fallbackHeight={placedItemRect(item, props.measured).height}
 										onMeasure={props.onMeasure}
 									/>
 								),
