@@ -51,13 +51,15 @@ export function CanvasPage() {
 	const items = useMemo(() => (canvas ? layoutViews(canvas) : []), [canvas])
 
 	// Camera deep link: written back debounced so a copied URL reproduces the
-	// exact framing for review. The focused view rides along — dropping it
-	// here would let any camera motion erase a device-pill selection.
+	// exact framing for review. The focused view and tooling LOD ride along —
+	// dropping either here lets an unrelated camera move change the surface.
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	)
 	const onViewRef = useRef(search.view)
 	onViewRef.current = typeof search.view === 'string' ? search.view : undefined
+	const onLodRef = useRef(search.lod)
+	onLodRef.current = search.lod
 	const onCameraMove = useCallback(
 		(camera: Camera) => {
 			if (!canvasId) return
@@ -69,6 +71,9 @@ export function CanvasPage() {
 						y: Math.round(camera.y),
 						z: Math.round(camera.zoom * 1000) / 1000,
 						...(onViewRef.current ? { view: onViewRef.current } : {}),
+						...(onLodRef.current === 'live'
+							? { lod: 'live' as const }
+							: {}),
 					},
 					replace: true,
 				})

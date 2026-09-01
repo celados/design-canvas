@@ -106,4 +106,25 @@ describe('placedItemRect', () => {
 		})
 		expect(placedItemRect(item, new Map())).toMatchObject({ height: 780 })
 	})
+
+	it('uses committed preview geometry before the image loader mounts', () => {
+		const definition = canvas('a', 'G', [1440])
+		definition.views[0]!.preview = {
+			src: '/preview.webp',
+			width: 1440,
+			height: 6944,
+		}
+		const [item] = layoutViews(definition) as Extract<
+			ReturnType<typeof layoutViews>[number],
+			{ kind: 'artboard' }
+		>[]
+
+		expect(placedItemRect(item, new Map())).toMatchObject({ height: 6944 })
+		expect(placedItemRect(item, new Map([[item.key, 7000]]))).toMatchObject({
+			height: 7000,
+		})
+		expect(placedItemRect(item, new Map([[item.key, 480]]))).toMatchObject({
+			height: 6944,
+		})
+	})
 })

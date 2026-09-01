@@ -9,6 +9,22 @@ const GROUP_LABEL_H = 64
 const CANVAS_LABEL_H = 44
 const FALLBACK_HEIGHT = 780
 
+function resolvedArtboardHeight(
+	view: CanvasView,
+	measuredHeight: number | undefined,
+): number {
+	const authoritativeHeight = view.preview?.height ?? view.minHeight
+	if (measuredHeight === undefined) {
+		return authoritativeHeight ?? FALLBACK_HEIGHT
+	}
+	// Live DOM reports its 480px shell before long descendants finish layout.
+	// A version-matched snapshot already knows the complete frame extent, so a
+	// transient measurement may expand that geometry but must never truncate it.
+	return authoritativeHeight === undefined
+		? measuredHeight
+		: Math.max(measuredHeight, authoritativeHeight)
+}
+
 export type PlacedArtboard = {
 	kind: 'artboard'
 	key: string
@@ -127,7 +143,7 @@ export function layoutWall(
 				})
 				rowHeight = Math.max(
 					rowHeight,
-					measured.get(key) ?? view.minHeight ?? FALLBACK_HEIGHT,
+					resolvedArtboardHeight(view, measured.get(key)),
 				)
 				x += view.width + COL_GAP
 			}
@@ -146,6 +162,6 @@ export function placedItemRect(
 		x: item.x,
 		y: item.y,
 		width: item.width,
-		height: measured.get(item.key) ?? item.view.minHeight ?? FALLBACK_HEIGHT,
+		height: resolvedArtboardHeight(item.view, measured.get(item.key)),
 	}
 }

@@ -26,7 +26,8 @@ import { fitBounds, panBy, unionRects, zoomAtPoint } from './camera'
 import { Hud } from './hud'
 import { placedItemRect } from './layout'
 import { Minimap } from './minimap'
-import { PreviewArtboard, useSnapshotCaptureDeferral } from './preview'
+import { useSnapshotCaptureDeferral } from './preview'
+import { PreviewCanvas } from './preview-canvas'
 import { PrototypeConnections } from './prototype-connections'
 import { ReferenceLayer } from './refs'
 
@@ -167,6 +168,26 @@ export function Stage(props: StageProps) {
 		props.focusKey,
 		size,
 	])
+	const previewEntries = useMemo(
+		() =>
+			size
+				? artboards.flatMap((item) => {
+						const planEntry = artboardRenderPlan?.get(item.key)
+						const preview = artboardRenderPlan
+							? planEntry?.lod === 'preview'
+							: artboardMode !== 'live'
+						if (!preview) return []
+						return [
+							{
+								item,
+								fallbackHeight: placedItemRect(item, props.measured).height,
+								priority: planEntry?.priority ?? 0,
+							},
+						]
+					})
+				: [],
+		[artboardMode, artboardRenderPlan, artboards, props.measured, size],
+	)
 
 	const bounds = useMemo(
 		() =>
@@ -518,89 +539,79 @@ export function Stage(props: StageProps) {
 						onPointerUp={endDrag}
 						onPointerCancel={endDrag}
 					>
-						<div
-							className="dc-world"
-							style={{
-								transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.zoom})`,
-							}}
-						>
-							<div
-								className="dc-dots"
-								style={{
-									left: dotsRect.x,
-									top: dotsRect.y,
-									width: dotsRect.width,
-									height: dotsRect.height,
-								}}
+						<div className="dc-stage-scene">
+							<PreviewCanvas
+								camera={camera}
+								viewport={size}
+								entries={previewEntries}
+								onMeasure={props.onMeasure}
 							/>
-							{props.items.map((item) =>
-								item.kind === 'label' ? (
-									<div
-										key={item.key}
-										className={
-											item.depth === 'group'
-												? 'dc-label-group'
-												: 'dc-label-canvas'
-										}
-										style={{ left: item.x, top: item.y }}
-									>
-										{/*
-										 * Labels read at a constant screen size like Figma section
-										 * names. The transform never affects layout, so the world-space
-										 * band the layout reserved stays exact; overflow grows upward
-										 * into the row gap, and the clamp keeps extreme zoom-outs from
-										 * reaching the previous row's artboards.
-										 */}
-										<span
-											style={{
-												transform: `scale(${Math.min(1 / camera.zoom, 8)})`,
-												transformOrigin: 'bottom left',
-											}}
-										>
-											{item.text}
-										</span>
-									</div>
-								) : artboardRenderPlan ? (
-									artboardRenderPlan.get(item.key)?.lod === 'preview' ? (
-										<PreviewArtboard
+							<div
+								className="dc-world"
+								style={{
+									transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.zoom})`,
+								}}
+							>
+								<div
+									className="dc-dots"
+									style={{
+										left: dotsRect.x,
+										top: dotsRect.y,
+										width: dotsRect.width,
+										height: dotsRect.height,
+									}}
+								/>
+								{props.items.map((item) =>
+									item.kind === 'label' ? (
+										<div
 											key={item.key}
-											item={item}
-											priority={artboardRenderPlan.get(item.key)?.priority ?? 0}
-											fallbackHeight={
-												placedItemRect(item, props.measured).height
+											className={
+												item.depth === 'group'
+													? 'dc-label-group'
+													: 'dc-label-canvas'
 											}
-											onMeasure={props.onMeasure}
-										/>
-									) : artboardRenderPlan.get(item.key)?.lod === 'live' ? (
+											style={{ left: item.x, top: item.y }}
+										>
+											{/*
+											 * Labels read at a constant screen size like Figma section
+											 * names. The transform never affects layout, so the world-space
+											 * band the layout reserved stays exact; overflow grows upward
+											 * into the row gap, and the clamp keeps extreme zoom-outs from
+											 * reaching the previous row's artboards.
+											 */}
+											<span
+												style={{
+													transform: `scale(${Math.min(1 / camera.zoom, 8)})`,
+													transformOrigin: 'bottom left',
+												}}
+											>
+												{item.text}
+											</span>
+										</div>
+									) : artboardRenderPlan ? (
+										artboardRenderPlan.get(item.key)?.lod === 'live' ? (
+											<Artboard
+												key={item.key}
+												item={item}
+												onMeasure={props.onMeasure}
+											/>
+										) : null
+									) : artboardMode === 'live' ? (
 										<Artboard
 											key={item.key}
 											item={item}
 											onMeasure={props.onMeasure}
 										/>
-									) : null
-								) : artboardMode === 'live' ? (
-									<Artboard
-										key={item.key}
-										item={item}
-										onMeasure={props.onMeasure}
+									) : null,
+								)}
+								{props.showPrototypeConnections ? (
+									<PrototypeConnections
+										items={props.items}
+										measured={props.measured}
 									/>
-								) : (
-									<PreviewArtboard
-										key={item.key}
-										item={item}
-										priority={0}
-										fallbackHeight={placedItemRect(item, props.measured).height}
-										onMeasure={props.onMeasure}
-									/>
-								),
-							)}
-							{props.showPrototypeConnections ? (
-								<PrototypeConnections
-									items={props.items}
-									measured={props.measured}
-								/>
-							) : null}
-							<ReferenceLayer />
+								) : null}
+								<ReferenceLayer />
+							</div>
 						</div>
 						{size ? (
 							<>

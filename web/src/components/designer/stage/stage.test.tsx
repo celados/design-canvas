@@ -24,14 +24,15 @@ describe('Stage initial render', () => {
 				},
 			],
 		}
+		const connect = vi.fn(() => ({
+			read: () => ({ status: 'idle' }) as const,
+			subscribe: () => () => {},
+			activate: () => () => {},
+			updatePriority: () => {},
+			retry: () => {},
+		}))
 		const provider: ArtboardSnapshotProvider = {
-			connect: () => ({
-				read: () => ({ status: 'idle' }),
-				subscribe: () => () => {},
-				activate: () => () => {},
-				updatePriority: () => {},
-				retry: () => {},
-			}),
+			connect,
 		}
 		const html = renderToString(
 			<SnapshotProvider provider={provider}>
@@ -55,6 +56,9 @@ describe('Stage initial render', () => {
 		)
 
 		expect(render).not.toHaveBeenCalled()
-		expect(html).toContain('dc-preview-artboard')
+		expect(connect).not.toHaveBeenCalled()
+		expect(html).toContain('dc-stage-scene')
+		expect(html).toContain('dc-preview-canvas')
+		expect(html).not.toContain('dc-preview-frame')
 	})
 })

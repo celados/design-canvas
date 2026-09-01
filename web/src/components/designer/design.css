@@ -13,6 +13,7 @@
 		-apple-system,
 		'Segoe UI',
 		sans-serif;
+	isolation: isolate;
 }
 
 .dc-scroll {
@@ -31,6 +32,8 @@
 .dc-body {
 	position: absolute;
 	inset: 0;
+	/* Keep stage damage on a surface below shell chrome such as the navigator. */
+	transform: translateZ(0);
 }
 /* The navigator floats over stages, but the gallery is a reading surface:
    shift it clear of the open panel. */
@@ -47,6 +50,7 @@
 	touch-action: none;
 	user-select: none;
 	cursor: default;
+	isolation: isolate;
 }
 .dc-stage[data-panning] {
 	cursor: grabbing;
@@ -62,6 +66,18 @@
 	cursor: grabbing;
 }
 
+.dc-stage-scene {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	overflow: hidden;
+	contain: paint;
+	isolation: isolate;
+	/* Raster previews repaint at camera cadence. A dedicated compositor surface
+	   keeps their damage from invalidating sibling HUD and navigator chrome. */
+	transform: translateZ(0);
+}
+
 .dc-world {
 	position: absolute;
 	left: 0;
@@ -70,6 +86,17 @@
 	height: 0;
 	transform-origin: 0 0;
 	will-change: transform;
+	z-index: 1;
+}
+
+.dc-preview-canvas {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	z-index: 0;
 }
 
 .dc-dots {
@@ -187,18 +214,11 @@
 	user-select: text;
 }
 
-.dc-preview-frame > img,
 .dc-card-preview > img {
 	display: block;
 	width: 100%;
 	height: 100%;
 	object-fit: fill;
-	pointer-events: none;
-}
-
-.dc-preview-artboard {
-	/* Overview snapshots have no product interaction, so a primary drag can pan
-	   from anywhere on the visual instead of requiring empty stage space. */
 	pointer-events: none;
 }
 
@@ -247,10 +267,11 @@
 	gap: 2px;
 	border-radius: 10px;
 	border: 1px solid rgb(255 255 255 / 0.1);
-	background: rgb(20 20 23 / 0.92);
+	background: #141417;
 	padding: 3px;
 	box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
-	backdrop-filter: blur(10px);
+	contain: paint;
+	isolation: isolate;
 }
 .dc-device-bar .dc-chip-button {
 	min-width: 64px;
@@ -265,16 +286,18 @@
 	position: absolute;
 	bottom: 16px;
 	left: 50%;
+	z-index: 20;
 	transform: translateX(-50%);
 	display: flex;
 	align-items: center;
 	gap: 2px;
 	border-radius: 10px;
 	border: 1px solid rgb(255 255 255 / 0.1);
-	background: rgb(20 20 23 / 0.92);
+	background: #141417;
 	padding: 3px;
 	box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
-	backdrop-filter: blur(10px);
+	contain: paint;
+	isolation: isolate;
 }
 .dc-hud-button {
 	border-radius: 7px;
@@ -327,11 +350,13 @@
 	position: absolute;
 	right: 16px;
 	bottom: 16px;
+	z-index: 20;
 	border-radius: 9px;
 	border: 1px solid rgb(255 255 255 / 0.1);
-	background: rgb(16 16 19 / 0.92);
+	background: #101013;
 	box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
-	backdrop-filter: blur(10px);
+	contain: paint;
+	isolation: isolate;
 	overflow: hidden;
 	cursor: pointer;
 }
@@ -422,13 +447,14 @@
 	gap: 7px;
 	border-radius: 9px;
 	border: 1px solid rgb(255 255 255 / 0.1);
-	background: rgb(20 20 23 / 0.92);
+	background: #141417;
 	padding: 7px 12px;
 	font-size: 12.5px;
 	font-weight: 600;
 	color: #e4e4e7;
 	box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
-	backdrop-filter: blur(10px);
+	contain: paint;
+	isolation: isolate;
 	cursor: pointer;
 }
 .dc-nav-fab:hover {
@@ -448,10 +474,11 @@
 	overflow-y: auto;
 	border-radius: 12px;
 	border: 1px solid rgb(255 255 255 / 0.1);
-	background: rgb(16 16 19 / 0.94);
+	background: #101013;
 	padding: 12px;
 	box-shadow: 0 12px 36px rgb(0 0 0 / 0.5);
-	backdrop-filter: blur(12px);
+	contain: paint;
+	isolation: isolate;
 }
 
 .dc-nav-brand {

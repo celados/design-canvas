@@ -95,4 +95,18 @@ describe('createArtboardRenderPlan', () => {
 		expect([...plan.keys()]).toEqual(['offscreen'])
 		expect(plan.get('offscreen')?.lod).toBe('preview')
 	})
+
+	it('culls unequal frame sizes as whole rectangles', () => {
+		const plan = createArtboardRenderPlan({
+			camera: { x: 0, y: -5_000, zoom: 1 },
+			viewport: { width: 1_000, height: 800 },
+			candidates: [
+				{ key: 'short', rect: { x: 100, y: 0, width: 300, height: 480 } },
+				{ key: 'tall', rect: { x: 500, y: 0, width: 300, height: 11_940 } },
+			],
+			lod: 'preview',
+		})
+
+		expect([...plan.keys()]).toEqual(['tall'])
+	})
 })

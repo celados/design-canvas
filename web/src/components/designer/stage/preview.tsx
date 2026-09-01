@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 
 import {
 	createContext,
-	memo,
 	useCallback,
 	useContext,
 	useEffect,
@@ -13,7 +12,6 @@ import {
 } from 'react'
 
 import type { CanvasView } from '../api'
-import type { PlacedArtboard } from './layout'
 import type {
 	ArtboardSnapshotCache,
 	ArtboardPreviewState,
@@ -26,7 +24,6 @@ import { ArtboardErrorBoundary } from './artboard-error-boundary'
 import { createBrowserArtboardSnapshotCache } from './preview-cache'
 import { previewPixelRatio } from './preview-raster'
 import { createArtboardSnapshotStore } from './preview-store'
-import { useStageZoom } from './stage'
 
 type SnapshotDiagnostics = {
 	read: ArtboardSnapshotStore['readMetrics']
@@ -107,7 +104,7 @@ function useSnapshotProvider(): ArtboardSnapshotProviderValue {
 	return provider
 }
 
-function useArtboardPreview(
+export function useArtboardPreview(
 	key: string,
 	view: CanvasView,
 	enabled = true,
@@ -301,79 +298,6 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 		)
 	})
 }
-
-export const PreviewArtboard = memo(function PreviewArtboard(props: {
-	item: PlacedArtboard
-	fallbackHeight: number
-	priority: number
-	onMeasure: (key: string, height: number) => void
-}) {
-	const { item } = props
-	const zoom = useStageZoom()
-	const state = useArtboardPreview(item.key, item.view, true, props.priority)
-	const preview = state.status === 'ready' ? state.preview : null
-	const height = preview?.height ?? props.fallbackHeight
-	const compact = zoom < 0.35
-	const title = item.labelPrefix
-		? `${item.labelPrefix} · ${item.view.label}`
-		: item.view.label
-
-	useEffect(() => {
-		if (preview) props.onMeasure(item.key, preview.height)
-	}, [item.key, preview, props.onMeasure])
-
-	return (
-		<div
-			className="dc-preview-artboard absolute"
-			style={{ left: item.x, top: item.y }}
-			data-artboard
-		>
-			<div
-				className="dc-artboard-label"
-				style={{
-					transform: `scale(${Math.min(1 / zoom, 8)})`,
-					transformOrigin: 'bottom left',
-					width: item.width * zoom,
-				}}
-			>
-				<div className="min-w-0 truncate">
-					<span className="font-semibold text-neutral-100">{title}</span>
-					{compact ? null : (
-						<span className="ml-2 text-neutral-500">
-							{item.canvas.group} / {item.canvas.title}
-						</span>
-					)}
-				</div>
-				{compact ? null : (
-					<span className="dc-chip tabular-nums">
-						{item.width}×{height}
-					</span>
-				)}
-			</div>
-			<div
-				className="dc-frame dc-preview-frame"
-				style={{
-					width: item.width,
-					height,
-					backgroundColor: item.view.dark ? '#09090b' : '#ffffff',
-				}}
-			>
-				{preview ? (
-					<img
-						src={preview.src}
-						alt=""
-						width={preview.width}
-						height={preview.height}
-						draggable={false}
-						decoding="async"
-					/>
-				) : (
-					<div className="dc-preview-placeholder" data-status={state.status} />
-				)}
-			</div>
-		</div>
-	)
-})
 
 export function ArtboardPreviewImage(props: {
 	previewKey: string
