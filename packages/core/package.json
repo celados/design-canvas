@@ -1,0 +1,40 @@
+{
+	"name": "@celados/design-canvas-core",
+	"version": "0.1.0",
+	"description": "Headless camera, LOD, and snapshot scheduling primitives for Design Canvas.",
+	"files": [
+		"dist"
+	],
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./camera": {
+			"types": "./dist/camera.d.ts",
+			"default": "./dist/camera.js"
+		},
+		"./lod": {
+			"types": "./dist/lod.d.ts",
+			"default": "./dist/lod.js"
+		},
+		"./snapshot-raster": {
+			"types": "./dist/snapshot-raster.d.ts",
+			"default": "./dist/snapshot-raster.js"
+		},
+		"./snapshot-store": {
+			"types": "./dist/snapshot-store.d.ts",
+			"default": "./dist/snapshot-store.js"
+		}
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://npm.celados.com"
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"typecheck": "tsc -p tsconfig.json --noEmit"
+	}
+}

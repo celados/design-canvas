@@ -10,6 +10,7 @@
 			"description": "A development-only gallery, responsive canvas, prototype flow, reference overlay, screenshot, and source-linked annotation workspace.",
 			"author": "Ethan Huo <huodong.work@gmail.com>",
 			"dependencies": [
+				"@celados/design-canvas-core",
 				"@tanstack/react-router",
 				"html-to-image",
 				"lucide-react",
