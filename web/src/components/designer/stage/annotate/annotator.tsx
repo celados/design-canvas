@@ -3,8 +3,10 @@ import type { PointerEvent as ReactPointerEvent, RefObject } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { CanvasDefinition } from '../../api'
+import type { PlacedArtboard } from '../layout'
 import type { Annotation, AnnotationTarget } from './model'
 
+import { artboardKey } from '../layout'
 import { useStageApi, useStageCamera } from '../stage'
 import { installSourceCapture } from './capture'
 import { annotationsToMarkdown } from './markdown'
@@ -14,9 +16,14 @@ import {
 	parseAnnotations,
 	saveAnnotations,
 } from './model'
-import { captureTarget, resolveTarget } from './resolve'
+import {
+	captureTarget,
+	resolveAnnotationAnchor,
+	resolveTarget,
+} from './resolve'
 
 type Draft = {
+	canvasId: string
 	target: AnnotationTarget
 	viewId: string
 }
@@ -49,12 +56,20 @@ function parseFrameKey(
 }
 
 export function Annotator(props: {
-	canvas: CanvasDefinition
+	artboards: PlacedArtboard[]
+	canCreate: boolean
+	canvases: CanvasDefinition[]
 	containerRef: RefObject<HTMLDivElement | null>
+	measured: ReadonlyMap<string, number>
+	onNavigate?: ((canvasId: string, viewId: string) => void) | undefined
 }) {
-	const { canvas, containerRef } = props
+	const { artboards, canCreate, canvases, containerRef, measured } = props
 	const { screenToWorld, flyTo } = useStageApi()
 	const camera = useStageCamera()
+	const canvasIds = useMemo(
+		() => new Set(canvases.map((canvas) => canvas.id)),
+		[canvases],
+	)
 
 	const [active, setActive] = useState(false)
 	const [panelOpen, setPanelOpen] = useState(false)
@@ -81,7 +96,7 @@ export function Annotator(props: {
 	// Load + re-resolve anchors against the live DOM (elements move between
 	// sessions; stored world coords are the stale fallback).
 	useEffect(() => {
-		const loaded = loadAnnotations(canvas.id)
+		const loaded = canvases.flatMap((canvas) => loadAnnotations(canvas.id))
 		if (loaded.length === 0) {
 			setAnnotations([])
 			return
@@ -102,22 +117,44 @@ export function Annotator(props: {
 				}
 			})
 			setAnnotations(next)
-			saveAnnotations(canvas.id, next)
+			for (const canvas of canvases) {
+				saveAnnotations(
+					canvas.id,
+					next.filter((annotation) => annotation.canvasId === canvas.id),
+				)
+			}
 		}, 300)
 		return () => clearTimeout(timer)
-	}, [canvas.id, screenToWorld])
+	}, [canvases, screenToWorld])
+
+	useEffect(() => {
+		if (canCreate) return
+		setActive(false)
+		setDraft(null)
+		setHighlight(null)
+	}, [canCreate])
 
 	const sorted = useMemo(
 		() => [...annotations].sort((a, b) => a.createdAt - b.createdAt),
 		[annotations],
 	)
+	const anchorFor = useCallback(
+		(annotation: Annotation) =>
+			resolveAnnotationAnchor(annotation, artboards, measured),
+		[artboards, measured],
+	)
 
 	const persist = useCallback(
 		(next: Annotation[]) => {
 			setAnnotations(next)
-			saveAnnotations(canvas.id, next)
+			for (const canvas of canvases) {
+				saveAnnotations(
+					canvas.id,
+					next.filter((annotation) => annotation.canvasId === canvas.id),
+				)
+			}
 		},
-		[canvas.id],
+		[canvases],
 	)
 
 	// HUD mirrors annotator state through a DOM event so the pieces stay
@@ -131,11 +168,19 @@ export function Annotator(props: {
 	}, [active, annotations.length, panelOpen])
 
 	const copyMarkdown = useCallback(async () => {
-		const markdown = annotationsToMarkdown(
-			canvas,
-			annotations,
-			window.location.href,
-		)
+		const markdown = canvases
+			.filter((canvas) =>
+				annotations.some((annotation) => annotation.canvasId === canvas.id),
+			)
+			.map((canvas) =>
+				annotationsToMarkdown(
+					canvas,
+					annotations.filter((annotation) => annotation.canvasId === canvas.id),
+					window.location.href,
+				),
+			)
+			.filter((section) => section.trim().length > 0)
+			.join('\n\n')
 		try {
 			await navigator.clipboard.writeText(markdown)
 			setCopied(true)
@@ -143,7 +188,7 @@ export function Annotator(props: {
 		} catch {
 			console.warn('[design] clipboard write failed')
 		}
-	}, [canvas, annotations])
+	}, [annotations, canvases])
 
 	// Export writes a review artifact that can be committed or shared; import
 	// merges non-destructively so two reviewers' files combine.
@@ -154,10 +199,13 @@ export function Annotator(props: {
 		const url = URL.createObjectURL(blob)
 		const anchor = document.createElement('a')
 		anchor.href = url
-		anchor.download = `review-${canvas.id}.json`
+		anchor.download =
+			canvases.length === 1
+				? `review-${canvases[0]?.id}.json`
+				: 'review-design.json'
 		anchor.click()
 		URL.revokeObjectURL(url)
-	}, [canvas.id, annotations])
+	}, [annotations, canvases])
 
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	// One-shot import feedback; null = nothing to show.
@@ -166,25 +214,30 @@ export function Annotator(props: {
 		async (file: File) => {
 			try {
 				const incoming = parseAnnotations(JSON.parse(await file.text()))
-				persist(mergeAnnotations(sorted, incoming))
-				setImportedCount(incoming.length)
+				const accepted = incoming.filter((annotation) =>
+					canvasIds.has(annotation.canvasId),
+				)
+				persist(mergeAnnotations(sorted, accepted))
+				setImportedCount(accepted.length)
 				setTimeout(() => setImportedCount(null), 2500)
 			} catch {
 				console.warn('[design] annotation import failed to parse')
 			}
 		},
-		[sorted, persist],
+		[canvasIds, persist, sorted],
 	)
 
 	// Global commands: HUD buttons, palette actions, keyboard.
 	useEffect(() => {
-		const onToggle = () => setActive((current) => !current)
+		const onToggle = () => {
+			if (canCreate) setActive((current) => !current)
+		}
 		const onPanel = () => setPanelOpen((current) => !current)
 		const onCopy = () => void copyMarkdown()
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (isEditable(event.target)) return
 			if (event.metaKey || event.ctrlKey || event.altKey) return
-			if (event.key === 'c') setActive((current) => !current)
+			if (event.key === 'c' && canCreate) setActive((current) => !current)
 		}
 		window.addEventListener('dc:annotate', onToggle)
 		window.addEventListener('dc:annotate-panel', onPanel)
@@ -196,7 +249,7 @@ export function Annotator(props: {
 			window.removeEventListener('dc:annotate-copy', onCopy)
 			window.removeEventListener('keydown', onKeyDown)
 		}
-	}, [copyMarkdown])
+	}, [canCreate, copyMarkdown])
 
 	// Escape peels state innermost-first: composer, then annotate mode.
 	useEffect(() => {
@@ -218,7 +271,7 @@ export function Annotator(props: {
 	// targets, so background drag still pans while annotating.
 	useEffect(() => {
 		const container = containerRef.current
-		if (!container || !active) return
+		if (!container || !active || !canCreate) return
 
 		const frameOf = (
 			target: EventTarget | null,
@@ -251,8 +304,9 @@ export function Annotator(props: {
 			event.preventDefault()
 			event.stopPropagation()
 			const parsed = parseFrameKey(hit.frame.getAttribute(FRAME_ATTR) ?? '')
-			if (!parsed || parsed.canvasId !== canvas.id) return
+			if (!parsed || !canvasIds.has(parsed.canvasId)) return
 			setDraft({
+				canvasId: parsed.canvasId,
 				target: captureTarget(hit.el, hit.frame, screenToWorld),
 				viewId: parsed.viewId,
 			})
@@ -279,7 +333,7 @@ export function Annotator(props: {
 			container.removeEventListener('pointerdown', onDown, true)
 			window.removeEventListener('click', onClick, true)
 		}
-	}, [active, canvas.id, containerRef, screenToWorld])
+	}, [active, canCreate, canvasIds, containerRef, screenToWorld])
 
 	const submitDraft = useCallback(
 		(comment: string) => {
@@ -298,7 +352,7 @@ export function Annotator(props: {
 					...sorted,
 					{
 						id: crypto.randomUUID(),
-						canvasId: canvas.id,
+						canvasId: draft.canvasId,
 						viewId: draft.viewId,
 						comment: trimmed,
 						createdAt: Date.now(),
@@ -310,7 +364,7 @@ export function Annotator(props: {
 			setEditingId(null)
 			setPanelOpen(true)
 		},
-		[draft, editingId, sorted, persist, canvas.id],
+		[draft, editingId, persist, sorted],
 	)
 
 	const remove = useCallback(
@@ -330,8 +384,13 @@ export function Annotator(props: {
 		? sorted.find((a) => a.id === editingId)
 		: undefined
 	const composerTarget = draft?.target ?? editingAnnotation?.target
-	const composerPos = composerTarget
-		? worldToScreen(composerTarget.worldX, composerTarget.worldY)
+	const composerAnchor = draft
+		? { x: draft.target.worldX, y: draft.target.worldY }
+		: editingAnnotation
+			? anchorFor(editingAnnotation)
+			: null
+	const composerPos = composerAnchor
+		? worldToScreen(composerAnchor.x, composerAnchor.y)
 		: null
 
 	return (
@@ -349,10 +408,16 @@ export function Annotator(props: {
 			) : null}
 
 			{sorted.map((annotation, index) => {
-				const pos = worldToScreen(
-					annotation.target.worldX,
-					annotation.target.worldY,
-				)
+				if (
+					!artboards.some(
+						(item) =>
+							item.key === artboardKey(annotation.canvasId, annotation.viewId),
+					)
+				) {
+					return null
+				}
+				const anchor = anchorFor(annotation)
+				const pos = worldToScreen(anchor.x, anchor.y)
 				return (
 					<button
 						key={annotation.id}
@@ -408,8 +473,14 @@ export function Annotator(props: {
 					</div>
 					{sorted.length === 0 ? (
 						<p className="px-1 py-4 text-xs leading-5 text-neutral-500">
-							Press <kbd className="dc-kbd">C</kbd> to enter annotate mode, then
-							click any element on an artboard.
+							{canCreate ? (
+								<>
+									Press <kbd className="dc-kbd">C</kbd> to enter annotate mode,
+									then click any element on an artboard.
+								</>
+							) : (
+								'Zoom in to the live UI to add a comment.'
+							)}
 						</p>
 					) : (
 						<div className="flex flex-col gap-1">
@@ -419,14 +490,24 @@ export function Annotator(props: {
 										type="button"
 										className="min-w-0 flex-1 text-left"
 										title="Fly to pin"
-										onClick={() =>
+										onClick={() => {
+											const present = artboards.some(
+												(item) =>
+													item.key ===
+													artboardKey(annotation.canvasId, annotation.viewId),
+											)
+											if (!present && props.onNavigate) {
+												props.onNavigate(annotation.canvasId, annotation.viewId)
+												return
+											}
+											const anchor = anchorFor(annotation)
 											flyTo({
-												x: annotation.target.worldX - 40,
-												y: annotation.target.worldY - 40,
+												x: anchor.x - 40,
+												y: anchor.y - 40,
 												width: 80,
 												height: 80,
 											})
-										}
+										}}
 									>
 										<div className="flex items-center gap-2">
 											<span className="dc-pin-static">{index + 1}</span>

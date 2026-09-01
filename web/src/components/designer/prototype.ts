@@ -24,6 +24,47 @@ export type PrototypeGraph = {
 	unresolved: PrototypeHotspot[]
 }
 
+/** Registry projection used when overview LOD has replaced live DOM with pixels. */
+export function resolveDeclaredPrototypeHotspots(
+	items: PlacedItem[],
+	measured: ReadonlyMap<string, number>,
+): PrototypeHotspot[] {
+	const artboards = items.filter(
+		(item): item is PlacedArtboard => item.kind === 'artboard',
+	)
+	const representative = new Map<string, PlacedArtboard>()
+	for (const artboard of artboards) {
+		if (!representative.has(artboard.canvas.id))
+			representative.set(artboard.canvas.id, artboard)
+	}
+
+	return artboards.flatMap((source) => {
+		if (representative.get(source.canvas.id) !== source) return []
+		const sourceRect = placedItemRect(source, measured)
+		return (source.canvas.prototypeLinks ?? []).flatMap((link) => {
+			const target = representative.get(link.to)
+			if (!target) return []
+			const targetRect = placedItemRect(target, measured)
+			const targetOnRight =
+				targetRect.x + targetRect.width / 2 >=
+				sourceRect.x + sourceRect.width / 2
+			return [
+				{
+					key: `${source.key}::${link.id}`,
+					fromCanvasId: source.canvas.id,
+					fromViewId: source.view.id,
+					toCanvasId: link.to,
+					label: link.label,
+					point: {
+						x: targetOnRight ? sourceRect.x + sourceRect.width : sourceRect.x,
+						y: sourceRect.y + sourceRect.height / 2,
+					},
+				},
+			]
+		})
+	})
+}
+
 export function readPrototypeIntent(
 	target: EventTarget | null,
 	modified: boolean,

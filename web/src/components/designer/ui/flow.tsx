@@ -39,6 +39,12 @@ export function FlowPage() {
 		},
 		[canvases, navigate],
 	)
+	const openArtboard = useCallback(
+		(canvasId: string, viewId: string) => {
+			navigate(`/_design/c/${canvasId}`, { search: { view: viewId } })
+		},
+		[navigate],
+	)
 
 	return (
 		<Stage
@@ -48,6 +54,9 @@ export function FlowPage() {
 			fitKey="prototype-flow"
 			showPrototypeConnections
 			onPrototypeNavigate={onPrototypeNavigate}
+			onArtboardOpen={openArtboard}
+			onAnnotationNavigate={openArtboard}
+			canvases={canvases}
 			artboardMode="adaptive"
 		/>
 	)

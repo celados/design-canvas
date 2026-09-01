@@ -22,7 +22,7 @@ import type {
 
 import { ArtboardErrorBoundary } from './artboard-error-boundary'
 import { createBrowserArtboardSnapshotCache } from './preview-cache'
-import { previewPixelRatio } from './preview-raster'
+import { hasMeaningfulRasterContent, previewPixelRatio } from './preview-raster'
 import { createArtboardSnapshotStore } from './preview-store'
 
 type SnapshotDiagnostics = {
@@ -244,13 +244,41 @@ async function captureFrame(
 		fontEmbedCache.set(fontKey, fontEmbedCSS)
 		fontEmbedCSS.catch(() => fontEmbedCache.delete(fontKey))
 	}
-	const blob = await htmlToImage.toBlob(frame, {
+	const canvas = await htmlToImage.toCanvas(frame, {
 		pixelRatio: previewPixelRatio(request.view.width, height),
 		backgroundColor: request.view.dark ? '#09090b' : '#ffffff',
 		fontEmbedCSS: await fontEmbedCSS,
 	})
-	if (!blob) throw new Error('Artboard preview produced an empty image')
+	if (!canvasHasMeaningfulContent(canvas, Boolean(request.view.dark))) {
+		throw new Error('Artboard preview produced a blank image')
+	}
+	const blob = await canvasToBlob(canvas)
 	return { blob, height }
+}
+
+function canvasHasMeaningfulContent(
+	canvas: HTMLCanvasElement,
+	dark: boolean,
+): boolean {
+	const sample = document.createElement('canvas')
+	sample.width = 64
+	sample.height = 64
+	const context = sample.getContext('2d')
+	if (!context) return false
+	context.drawImage(canvas, 0, 0, sample.width, sample.height)
+	return hasMeaningfulRasterContent(
+		context.getImageData(0, 0, sample.width, sample.height).data,
+		dark,
+	)
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+	return new Promise((resolve, reject) => {
+		canvas.toBlob((blob) => {
+			if (blob) resolve(blob)
+			else reject(new Error('Artboard preview produced an empty image'))
+		})
+	})
 }
 
 function readFontKey(frame: HTMLElement): string {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+	clientPointToWorld,
 	clampZoom,
 	fitBounds,
 	panBy,
@@ -11,6 +12,18 @@ import {
 	ZOOM_MAX,
 	ZOOM_MIN,
 } from './camera'
+
+describe('clientPointToWorld', () => {
+	it('subtracts the stage origin before inverting the camera', () => {
+		expect(
+			clientPointToWorld(
+				{ x: -100, y: 40, zoom: 0.1 },
+				{ x: 24, y: 96 },
+				{ x: 124, y: 196 },
+			),
+		).toEqual({ x: 2_000, y: 600 })
+	})
+})
 
 describe('clampZoom', () => {
 	it('clamps to the zoom range', () => {

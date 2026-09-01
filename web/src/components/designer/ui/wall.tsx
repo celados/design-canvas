@@ -58,6 +58,13 @@ export function WallPage() {
 			? { x, y, zoom: z }
 			: undefined
 
+	const openArtboard = useCallback(
+		(canvasId: string, viewId: string) => {
+			navigate(`/_design/c/${canvasId}`, { search: { view: viewId } })
+		},
+		[navigate],
+	)
+
 	return (
 		<Stage
 			items={items}
@@ -65,7 +72,10 @@ export function WallPage() {
 			onMeasure={onMeasure}
 			initialCamera={initialCamera}
 			onCameraMove={onCameraMove}
-			artboardMode="preview"
+			artboardMode="adaptive"
+			canvases={canvases}
+			onArtboardOpen={openArtboard}
+			onAnnotationNavigate={openArtboard}
 		/>
 	)
 }

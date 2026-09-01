@@ -100,6 +100,7 @@ describe('placedItemRect', () => {
 			ReturnType<typeof layoutViews>[number],
 			{ kind: 'artboard' }
 		>[]
+		if (!item) throw new Error('Expected an artboard')
 		expect(placedItemRect(item, new Map([[item.key, 999]]))).toMatchObject({
 			width: 1440,
 			height: 999,
@@ -114,10 +115,12 @@ describe('placedItemRect', () => {
 			width: 1440,
 			height: 6944,
 		}
-		const [item] = layoutViews(definition) as Extract<
-			ReturnType<typeof layoutViews>[number],
-			{ kind: 'artboard' }
-		>[]
+		const item = (
+			layoutViews(definition) as Extract<
+				ReturnType<typeof layoutViews>[number],
+				{ kind: 'artboard' }
+			>[]
+		)[0]!
 
 		expect(placedItemRect(item, new Map())).toMatchObject({ height: 6944 })
 		expect(placedItemRect(item, new Map([[item.key, 7000]]))).toMatchObject({

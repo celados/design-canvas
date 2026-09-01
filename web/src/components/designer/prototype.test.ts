@@ -8,6 +8,7 @@ import type { PlacedArtboard } from './stage/layout'
 import {
 	prototypeConnectionPath,
 	readPrototypeIntent,
+	resolveDeclaredPrototypeHotspots,
 	resolvePrototypeDestination,
 	resolvePrototypeGraph,
 	type PrototypeHotspot,
@@ -54,6 +55,28 @@ const hotspot: PrototypeHotspot = {
 }
 
 describe('resolvePrototypeGraph', () => {
+	it('projects registry links without mounted hotspot DOM', () => {
+		const home = canvas('home', ['desktop'])
+		const pricing = canvas('pricing', ['desktop'])
+		home.prototypeLinks = [{ id: 'cta', label: 'Pricing', to: 'pricing' }]
+
+		expect(
+			resolveDeclaredPrototypeHotspots(
+				[artboard(home, 'desktop', 0), artboard(pricing, 'desktop', 300)],
+				new Map(),
+			),
+		).toEqual([
+			{
+				key: 'home::desktop::cta',
+				fromCanvasId: 'home',
+				fromViewId: 'desktop',
+				toCanvasId: 'pricing',
+				label: 'Pricing',
+				point: { x: 100, y: 390 },
+			},
+		])
+	})
+
 	it('connects a hotspot to the matching target view', () => {
 		const home = canvas('home', ['desktop'])
 		const pricing = canvas('pricing', ['mobile', 'desktop'])

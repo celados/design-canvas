@@ -74,7 +74,7 @@
 	contain: paint;
 	isolation: isolate;
 	/* Raster previews repaint at camera cadence. A dedicated compositor surface
-	   keeps their damage from invalidating sibling HUD and navigator chrome. */
+     keeps their damage from invalidating sibling HUD and navigator chrome. */
 	transform: translateZ(0);
 }
 
@@ -212,6 +212,10 @@
 		0 0 0 1px rgb(255 255 255 / 0.09),
 		0 24px 64px rgb(0 0 0 / 0.5);
 	user-select: text;
+}
+
+[data-artboard][data-selected] .dc-frame {
+	box-shadow: 0 0 0 2px #818cf8;
 }
 
 .dc-card-preview > img {

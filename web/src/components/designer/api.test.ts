@@ -15,6 +15,7 @@ function page(partial: Record<string, unknown>) {
 describe('resolveDesignerPages', () => {
 	it('wraps a bare component in a desktop variant', () => {
 		const [canvas] = resolveDesignerPages([page({ component: leaf })])
+		if (!canvas) throw new Error('Expected a canvas')
 		expect(canvas.id).toBe('hero')
 		expect(canvas.title).toBe('hero')
 		expect(canvas.group).toBe('Pages')
@@ -43,6 +44,7 @@ describe('resolveDesignerPages', () => {
 				],
 			}),
 		])
+		if (!canvas) throw new Error('Expected a canvas')
 		expect(canvas.title).toBe('Hero')
 		expect(canvas.group).toBe('Marketing')
 		expect(canvas.views[0]).toMatchObject({ id: 'mobile', width: 390 })
@@ -62,6 +64,7 @@ describe('resolveDesignerPages', () => {
 				],
 			}),
 		])
+		if (!canvas) throw new Error('Expected a canvas')
 
 		expect(canvas.views.map((view) => view.previewVersion)).toEqual([
 			'page-1',

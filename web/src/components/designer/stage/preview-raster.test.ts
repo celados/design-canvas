@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { previewPixelRatio } from './preview-raster'
+import { hasMeaningfulRasterContent, previewPixelRatio } from './preview-raster'
 
 describe('previewPixelRatio', () => {
 	it('does not upscale small artboards', () => {
@@ -16,5 +16,25 @@ describe('previewPixelRatio', () => {
 
 		expect(20_000 * ratio).toBeLessThanOrEqual(4096)
 		expect(1440 * ratio * (20_000 * ratio)).toBeLessThanOrEqual(2_000_000)
+	})
+})
+
+describe('hasMeaningfulRasterContent', () => {
+	it('rejects pixels containing only the artboard background', () => {
+		expect(
+			hasMeaningfulRasterContent(
+				new Uint8ClampedArray([255, 255, 255, 255, 255, 255, 255, 255]),
+				false,
+			),
+		).toBe(false)
+	})
+
+	it('accepts visible foreground pixels', () => {
+		expect(
+			hasMeaningfulRasterContent(
+				new Uint8ClampedArray([255, 255, 255, 255, 40, 40, 40, 255]),
+				false,
+			),
+		).toBe(true)
 	})
 })

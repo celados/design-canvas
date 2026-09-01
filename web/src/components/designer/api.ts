@@ -18,6 +18,12 @@ export type DesignerPagePreview = {
 	height: number
 }
 
+export type DesignerPrototypeLink = {
+	id: string
+	to: string
+	label?: string
+}
+
 export type DesignerPageVariant = {
 	name: string
 	label?: string
@@ -46,6 +52,11 @@ type DesignerPageBase = {
 	/** Default preview revision for this page and all variants. */
 	previewVersion?: string
 	preview?: DesignerPagePreview
+	/**
+	 * Canvas-level graph survives overview LOD when interactive DOM is
+	 * rasterized.
+	 */
+	prototypeLinks?: DesignerPrototypeLink[]
 }
 
 /**
@@ -82,6 +93,7 @@ export type CanvasDefinition = {
 	group: string
 	summary?: string
 	tags?: string[]
+	prototypeLinks?: DesignerPrototypeLink[]
 	views: CanvasView[]
 }
 
@@ -117,6 +129,7 @@ export function resolveDesignerPages(
 			group: page.group ?? 'Pages',
 			summary: page.summary,
 			tags: page.tags,
+			prototypeLinks: page.prototypeLinks,
 			views: variants.map((variant) => ({
 				id: variant.name,
 				label: variant.label ?? variant.name,

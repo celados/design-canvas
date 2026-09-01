@@ -3,7 +3,11 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import type { PrototypeGraph, PrototypeHotspot } from '../prototype'
 import type { PlacedArtboard, PlacedItem } from './layout'
 
-import { prototypeConnectionPath, resolvePrototypeGraph } from '../prototype'
+import {
+	prototypeConnectionPath,
+	resolveDeclaredPrototypeHotspots,
+	resolvePrototypeGraph,
+} from '../prototype'
 
 const HOTSPOT_SELECTOR = '[data-dc-prototype-to]'
 const FRAME_SELECTOR = '[data-dc-frame]'
@@ -83,9 +87,13 @@ export function PrototypeConnections(props: {
 		const update = () => {
 			cancelAnimationFrame(frame)
 			frame = requestAnimationFrame(() => {
-				setGraph(
-					resolvePrototypeGraph(readHotspots(world, items), items, measured),
-				)
+				const live = readHotspots(world, items)
+				const liveKeys = new Set(live.map((hotspot) => hotspot.key))
+				const declared = resolveDeclaredPrototypeHotspots(
+					items,
+					measured,
+				).filter((hotspot) => !liveKeys.has(hotspot.key))
+				setGraph(resolvePrototypeGraph([...live, ...declared], items, measured))
 			})
 		}
 

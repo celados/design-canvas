@@ -16,6 +16,7 @@ const presetName = (width: number): string | null => {
 export const Artboard = memo(function Artboard(props: {
 	item: PlacedArtboard
 	onMeasure: (key: string, height: number) => void
+	selected: boolean
 }) {
 	const { item } = props
 	const zoom = useStageZoom()
@@ -75,6 +76,8 @@ export const Artboard = memo(function Artboard(props: {
 			className="absolute"
 			style={{ left: item.x, top: item.y }}
 			data-artboard
+			data-dc-artboard-key={item.key}
+			data-selected={props.selected || undefined}
 		>
 			{/*
 			 * Counter-scaled so the label reads at a constant screen size at any

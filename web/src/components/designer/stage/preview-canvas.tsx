@@ -42,6 +42,7 @@ export function PreviewCanvas(props: {
 	camera: Camera
 	viewport: Size | null
 	entries: PreviewCanvasEntry[]
+	selectedKey: string | null
 	onMeasure: (key: string, height: number) => void
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -117,9 +118,21 @@ export function PreviewCanvas(props: {
 			const height = asset?.preview.height ?? entry.fallbackHeight
 			const rect = previewCanvasRect(props.camera, entry.item, height)
 			if (!intersectsViewport(rect, viewport)) continue
-			drawCanvasArtboard(context, entry.item, rect, asset)
+			drawCanvasArtboard(
+				context,
+				entry.item,
+				rect,
+				asset,
+				props.selectedKey === entry.item.key,
+			)
 		}
-	}, [assetRevision, props.camera, props.entries, props.viewport])
+	}, [
+		assetRevision,
+		props.camera,
+		props.entries,
+		props.selectedKey,
+		props.viewport,
+	])
 
 	return (
 		<>
@@ -199,6 +212,7 @@ function drawCanvasArtboard(
 	item: PlacedArtboard,
 	rect: Rect,
 	asset: LoadedCanvasPreview | undefined,
+	selected: boolean,
 ) {
 	const radius = Math.min(10 * Math.max(0.2, rect.width / item.width), 4)
 	context.save()
@@ -211,6 +225,17 @@ function drawCanvasArtboard(
 		context.drawImage(asset.image, rect.x, rect.y, rect.width, rect.height)
 	}
 	context.restore()
+
+	if (selected) {
+		context.strokeStyle = '#818cf8'
+		context.lineWidth = 2
+		context.strokeRect(
+			rect.x + 1,
+			rect.y + 1,
+			Math.max(0, rect.width - 2),
+			Math.max(0, rect.height - 2),
+		)
+	}
 
 	if (rect.width >= 8 && rect.height >= 8) {
 		context.strokeStyle = 'rgb(255 255 255 / 0.1)'

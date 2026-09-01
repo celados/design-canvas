@@ -1,5 +1,8 @@
+import type { PlacedArtboard } from '../layout'
 import type { AnnotationTarget } from './model'
+import type { Annotation } from './model'
 
+import { artboardKey, placedItemRect } from '../layout'
 import { sourceElementFor, sourceLocFor } from './capture'
 
 /**
@@ -18,6 +21,23 @@ import { sourceElementFor, sourceLocFor } from './capture'
  */
 
 const MAX_DEPTH = 5
+
+export function resolveAnnotationAnchor(
+	annotation: Annotation,
+	artboards: PlacedArtboard[],
+	measured: ReadonlyMap<string, number>,
+): { x: number; y: number } {
+	const item = artboards.find(
+		(candidate) =>
+			candidate.key === artboardKey(annotation.canvasId, annotation.viewId),
+	)
+	if (!item) return { x: annotation.target.worldX, y: annotation.target.worldY }
+	const rect = placedItemRect(item, measured)
+	return {
+		x: rect.x + annotation.target.relX * rect.width,
+		y: rect.y + annotation.target.relY * rect.height,
+	}
+}
 
 // Hash-like class names from scoped-style compilers change every build.
 function isStableClass(cls: string): boolean {

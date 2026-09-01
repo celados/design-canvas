@@ -22,7 +22,13 @@ import { readPrototypeIntent } from '../prototype'
 import { Annotator } from './annotate/annotator'
 import { Artboard } from './artboard'
 import { createArtboardRenderPlan, selectArtboardLod } from './artboard-lod'
-import { fitBounds, panBy, unionRects, zoomAtPoint } from './camera'
+import {
+	clientPointToWorld,
+	fitBounds,
+	panBy,
+	unionRects,
+	zoomAtPoint,
+} from './camera'
 import { Hud } from './hud'
 import { placedItemRect } from './layout'
 import { Minimap } from './minimap'
@@ -68,8 +74,10 @@ type StageProps = {
 	fitKey?: string | undefined
 	/** Called at most once per frame while the camera moves; persist debounced. */
 	onCameraMove?: (camera: Camera) => void
-	/** When set, the annotator (C) can pin comments on this canvas's artboards. */
-	canvas?: CanvasDefinition | undefined
+	/** Canvases whose comments belong to this stage, including aggregate views. */
+	canvases?: CanvasDefinition[] | undefined
+	onArtboardOpen?: (canvasId: string, viewId: string) => void
+	onAnnotationNavigate?: (canvasId: string, viewId: string) => void
 	showPrototypeConnections?: boolean
 	onPrototypeNavigate?: (canvasId: string, sourceViewId?: string) => void
 	artboardMode?: 'adaptive' | 'live' | 'preview'
@@ -100,21 +108,7 @@ export function Stage(props: StageProps) {
 	// Mirrored to state only for the cursor affordance; the hot paths keep
 	// reading the ref so keydown never re-renders the stage.
 	const [spaceHeld, setSpaceHeld] = useState(false)
-	const onPrototypeClick = useCallback(
-		(event: ReactMouseEvent<HTMLDivElement>) => {
-			if (!props.onPrototypeNavigate) return
-			const intent = readPrototypeIntent(
-				event.target,
-				event.metaKey || event.ctrlKey,
-			)
-			if (!intent) return
-			event.preventDefault()
-			event.stopPropagation()
-			props.onPrototypeNavigate(intent.canvasId, intent.sourceViewId)
-		},
-		[props.onPrototypeNavigate],
-	)
-
+	const [selectedKey, setSelectedKey] = useState<string | null>(null)
 	const cameraRef = useRef(camera)
 	cameraRef.current = camera
 	const frameRef = useRef(0)
@@ -168,6 +162,15 @@ export function Stage(props: StageProps) {
 		props.focusKey,
 		size,
 	])
+	const canAnnotate =
+		artboardMode === 'live' ||
+		(artboardMode === 'adaptive' && adaptiveLod === 'live')
+
+	useEffect(() => {
+		if (selectedKey && !artboards.some((item) => item.key === selectedKey))
+			setSelectedKey(null)
+	}, [artboards, selectedKey])
+
 	const previewEntries = useMemo(
 		() =>
 			size
@@ -201,6 +204,74 @@ export function Stage(props: StageProps) {
 					.filter((rect): rect is Rect => rect !== null),
 			),
 		[artboards, props.measured],
+	)
+
+	const artboardAtClientPoint = useCallback(
+		(clientX: number, clientY: number) => {
+			const container = containerRef.current
+			if (!container) return undefined
+			const rect = container.getBoundingClientRect()
+			const point = clientPointToWorld(
+				cameraRef.current,
+				{ x: rect.left, y: rect.top },
+				{ x: clientX, y: clientY },
+			)
+			return artboards.find((item) => {
+				const bounds = placedItemRect(item, props.measured)
+				return (
+					point.x >= bounds.x &&
+					point.x <= bounds.x + bounds.width &&
+					point.y >= bounds.y &&
+					point.y <= bounds.y + bounds.height
+				)
+			})
+		},
+		[artboards, props.measured],
+	)
+
+	const artboardForEvent = useCallback(
+		(event: ReactMouseEvent<HTMLDivElement>) => {
+			const target = event.target instanceof Element ? event.target : null
+			if (target?.closest('[data-dc-frame]')) return undefined
+			const keyed = target?.closest<HTMLElement>('[data-dc-artboard-key]')
+			const key = keyed?.dataset.dcArtboardKey
+			return (
+				(key ? artboards.find((item) => item.key === key) : undefined) ??
+				artboardAtClientPoint(event.clientX, event.clientY)
+			)
+		},
+		[artboardAtClientPoint, artboards],
+	)
+
+	const onStageClick = useCallback(
+		(event: ReactMouseEvent<HTMLDivElement>) => {
+			if (props.onPrototypeNavigate) {
+				const intent = readPrototypeIntent(
+					event.target,
+					event.metaKey || event.ctrlKey,
+				)
+				if (intent) {
+					event.preventDefault()
+					event.stopPropagation()
+					props.onPrototypeNavigate(intent.canvasId, intent.sourceViewId)
+					return
+				}
+			}
+			const item = artboardForEvent(event)
+			if (item) setSelectedKey(item.key)
+		},
+		[artboardForEvent, props.onPrototypeNavigate],
+	)
+
+	const onStageDoubleClick = useCallback(
+		(event: ReactMouseEvent<HTMLDivElement>) => {
+			const item = artboardForEvent(event)
+			if (!item || !props.onArtboardOpen) return
+			event.preventDefault()
+			event.stopPropagation()
+			props.onArtboardOpen(item.canvas.id, item.view.id)
+		},
+		[artboardForEvent, props.onArtboardOpen],
 	)
 
 	// Camera updates stream in faster than display rate on trackpads; the ref
@@ -307,8 +378,9 @@ export function Stage(props: StageProps) {
 		props.measured,
 	])
 
-	// Wheel: scroll pans, pinch/⌘-scroll zooms at the cursor (Figma semantics).
-	// Non-passive so the page never scrolls or browser-zooms behind the stage.
+	// The stage treats every vertical wheel gesture as cursor-anchored zoom;
+	// panning remains an explicit drag so scrolling never moves the composition.
+	// Non-passive keeps the page and browser zoom from consuming the same gesture.
 	useEffect(() => {
 		const container = containerRef.current
 		if (!container) return
@@ -319,17 +391,13 @@ export function Stage(props: StageProps) {
 			const rect = container.getBoundingClientRect()
 			const cx = event.clientX - rect.left
 			const cy = event.clientY - rect.top
-			if (event.ctrlKey || event.metaKey) {
-				const speed = event.ctrlKey ? 0.011 : 0.0038
-				const factor = Math.exp(-event.deltaY * unit * speed)
-				scheduleCamera((camera) =>
-					zoomAtPoint(camera, cx, cy, camera.zoom * factor),
-				)
-			} else {
-				scheduleCamera((camera) =>
-					panBy(camera, -event.deltaX * unit, -event.deltaY * unit),
-				)
-			}
+			// Browser pinch gestures report smaller ctrl-modified deltas, hence the
+			// higher multiplier; both paths preserve the same anchored-zoom behavior.
+			const speed = event.ctrlKey ? 0.011 : 0.0038
+			const factor = Math.exp(-event.deltaY * unit * speed)
+			scheduleCamera((camera) =>
+				zoomAtPoint(camera, cx, cy, camera.zoom * factor),
+			)
 		}
 		container.addEventListener('wheel', onWheel, { passive: false })
 		return () => container.removeEventListener('wheel', onWheel)
@@ -404,6 +472,14 @@ export function Stage(props: StageProps) {
 				if (!event.repeat) event.preventDefault()
 				return
 			}
+			if (event.key === 'Enter' && selectedKey && props.onArtboardOpen) {
+				const selected = artboards.find((item) => item.key === selectedKey)
+				if (selected) {
+					event.preventDefault()
+					props.onArtboardOpen(selected.canvas.id, selected.view.id)
+				}
+				return
+			}
 			if (!(event.metaKey || event.ctrlKey)) return
 			if (event.key === '0') {
 				event.preventDefault()
@@ -456,7 +532,14 @@ export function Stage(props: StageProps) {
 			window.removeEventListener('keyup', onKeyUp)
 			window.removeEventListener('blur', onBlur)
 		}
-	}, [fitAll, zoomTo, scheduleCamera])
+	}, [
+		artboards,
+		fitAll,
+		props.onArtboardOpen,
+		scheduleCamera,
+		selectedKey,
+		zoomTo,
+	])
 
 	// Command palette and HUD dispatch stage commands as DOM events so the
 	// pieces stay decoupled across lazy chunks.
@@ -482,11 +565,14 @@ export function Stage(props: StageProps) {
 	}, [bounds])
 
 	const screenToWorld = useCallback((screenX: number, screenY: number) => {
+		const container = containerRef.current
 		const camera = cameraRef.current
-		return {
-			x: (screenX - camera.x) / camera.zoom,
-			y: (screenY - camera.y) / camera.zoom,
-		}
+		const bounds = container?.getBoundingClientRect()
+		return clientPointToWorld(
+			camera,
+			{ x: bounds?.left ?? 0, y: bounds?.top ?? 0 },
+			{ x: screenX, y: screenY },
+		)
 	}, [])
 
 	const viewportCenterWorld = useCallback(() => {
@@ -533,7 +619,8 @@ export function Stage(props: StageProps) {
 						className="dc-stage"
 						data-panning={panning || undefined}
 						data-space-pan={spaceHeld || undefined}
-						onClickCapture={onPrototypeClick}
+						onClickCapture={onStageClick}
+						onDoubleClick={onStageDoubleClick}
 						onPointerDown={onPointerDown}
 						onPointerMove={onPointerMove}
 						onPointerUp={endDrag}
@@ -544,6 +631,7 @@ export function Stage(props: StageProps) {
 								camera={camera}
 								viewport={size}
 								entries={previewEntries}
+								selectedKey={selectedKey}
 								onMeasure={props.onMeasure}
 							/>
 							<div
@@ -593,6 +681,7 @@ export function Stage(props: StageProps) {
 											<Artboard
 												key={item.key}
 												item={item}
+												selected={selectedKey === item.key}
 												onMeasure={props.onMeasure}
 											/>
 										) : null
@@ -600,6 +689,7 @@ export function Stage(props: StageProps) {
 										<Artboard
 											key={item.key}
 											item={item}
+											selected={selectedKey === item.key}
 											onMeasure={props.onMeasure}
 										/>
 									) : null,
@@ -615,7 +705,12 @@ export function Stage(props: StageProps) {
 						</div>
 						{size ? (
 							<>
-								<Hud zoom={camera.zoom} onFit={fitAll} onZoomTo={zoomTo} />
+								<Hud
+									canAnnotate={canAnnotate}
+									zoom={camera.zoom}
+									onFit={fitAll}
+									onZoomTo={zoomTo}
+								/>
 								<Minimap
 									items={artboards}
 									measured={props.measured}
@@ -625,8 +720,15 @@ export function Stage(props: StageProps) {
 								/>
 							</>
 						) : null}
-						{props.canvas ? (
-							<Annotator canvas={props.canvas} containerRef={containerRef} />
+						{props.canvases ? (
+							<Annotator
+								artboards={artboards}
+								canCreate={canAnnotate}
+								canvases={props.canvases}
+								containerRef={containerRef}
+								measured={props.measured}
+								onNavigate={props.onAnnotationNavigate}
+							/>
 						) : null}
 					</div>
 				</StageZoomContext.Provider>

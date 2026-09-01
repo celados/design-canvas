@@ -8,9 +8,19 @@ describe('previewCanvasRect', () => {
 
 		expect(
 			previewCanvasRect(camera, { x: 2_000, y: 300, width: 1_440 }, 11_940),
-		).toEqual({ x: 80, y: 110, width: 144, height: 1_194 })
+		).toEqual({
+			x: 80,
+			y: 110,
+			width: 144,
+			height: 1_194,
+		})
 		expect(
 			previewCanvasRect(camera, { x: 3_680, y: 300, width: 1_440 }, 480),
-		).toEqual({ x: 248, y: 110, width: 144, height: 48 })
+		).toEqual({
+			x: 248,
+			y: 110,
+			width: 144,
+			height: 48,
+		})
 	})
 })

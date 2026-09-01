@@ -4,7 +4,7 @@ import type {
 } from './preview-store'
 
 const DATABASE_NAME = 'design-canvas-previews'
-const DATABASE_VERSION = 1
+const DATABASE_VERSION = 2
 const STORE_NAME = 'snapshots'
 
 type SnapshotRecord = CachedArtboardSnapshot & {
@@ -45,7 +45,15 @@ function openDatabase(): Promise<IDBDatabase> {
 		const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION)
 		request.addEventListener(
 			'upgradeneeded',
-			() => {
+			(event) => {
+				// v1 accepted compositor-white captures; discard them instead of
+				// repeatedly restoring a known-invalid snapshot after this fix.
+				if (
+					event.oldVersion === 1 &&
+					request.result.objectStoreNames.contains(STORE_NAME)
+				) {
+					request.result.deleteObjectStore(STORE_NAME)
+				}
 				if (!request.result.objectStoreNames.contains(STORE_NAME)) {
 					request.result.createObjectStore(STORE_NAME, { keyPath: 'id' })
 				}

@@ -3,6 +3,7 @@ export type {
 	DesignerPage,
 	DesignerPagePreview,
 	DesignerPageVariant,
+	DesignerPrototypeLink,
 } from './api'
 export { Designer } from './designer'
 export type { DesignerProps } from './designer'

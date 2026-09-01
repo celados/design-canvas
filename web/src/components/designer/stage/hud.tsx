@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 type AnnotateState = { active: boolean; count: number; panelOpen: boolean }
 
 type HudProps = {
+	canAnnotate: boolean
 	zoom: number
 	onFit: () => void
 	onZoomTo: (zoom: number) => void
@@ -44,14 +45,20 @@ export function Hud(props: HudProps) {
 				{Math.round(props.zoom * 100)}%
 			</button>
 			<span className="dc-hud-divider" />
-			<button
-				type="button"
-				className={`dc-hud-button ${annotate.active ? 'dc-hud-button-active' : ''}`}
-				title="Annotate (C)"
-				onClick={() => window.dispatchEvent(new CustomEvent('dc:annotate'))}
-			>
-				<MessageSquarePlus size={13} />
-			</button>
+			{props.canAnnotate ? (
+				<button
+					type="button"
+					className={`dc-hud-button ${annotate.active ? 'dc-hud-button-active' : ''}`}
+					title="Annotate (C)"
+					onClick={() => window.dispatchEvent(new CustomEvent('dc:annotate'))}
+				>
+					<MessageSquarePlus size={13} />
+				</button>
+			) : (
+				<span className="px-1.5 text-[10px] text-neutral-500">
+					Zoom in to comment
+				</span>
+			)}
 			<button
 				type="button"
 				className={`dc-hud-button ${annotate.panelOpen ? 'dc-hud-button-active' : ''}`}

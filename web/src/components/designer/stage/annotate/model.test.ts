@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { PlacedArtboard } from '../layout'
 import type { Annotation } from './model'
 
 import {
@@ -9,6 +10,7 @@ import {
 	parseAnnotations,
 	saveAnnotations,
 } from './model'
+import { resolveAnnotationAnchor } from './resolve'
 
 function annotation(id: string, createdAt = 1): Annotation {
 	return {
@@ -29,8 +31,25 @@ function annotation(id: string, createdAt = 1): Annotation {
 	}
 }
 
+function storageStub() {
+	const values = new Map<string, string>()
+
+	return {
+		clear: () => values.clear(),
+		getItem: (key: string) => values.get(key) ?? null,
+		removeItem: (key: string) => values.delete(key),
+		setItem: (key: string, value: string) => values.set(key, value),
+	}
+}
+
+beforeEach(() => {
+	// Node exposes a localStorage global but leaves it undefined without a
+	// storage file. Stub it so these annotation tests do not depend on runner flags.
+	vi.stubGlobal('localStorage', storageStub())
+})
+
 afterEach(() => {
-	localStorage.clear()
+	vi.unstubAllGlobals()
 })
 
 describe('load/save roundtrip', () => {
@@ -73,5 +92,25 @@ describe('mergeAnnotations', () => {
 		)
 		expect(merged).toHaveLength(1)
 		expect(merged[0]?.createdAt).toBe(200)
+	})
+})
+
+describe('resolveAnnotationAnchor', () => {
+	it('rebuilds stale world coordinates from the current artboard layout', () => {
+		const item = {
+			kind: 'artboard',
+			key: 'hero::desktop',
+			x: 1_000,
+			y: 300,
+			width: 1_440,
+			view: { id: 'desktop', label: 'Desktop', width: 1_440, minHeight: 900 },
+		} as PlacedArtboard
+
+		expect(resolveAnnotationAnchor(annotation('a'), [item], new Map())).toEqual(
+			{
+				x: 1_720,
+				y: 750,
+			},
+		)
 	})
 })

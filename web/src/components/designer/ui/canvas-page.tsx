@@ -49,6 +49,7 @@ export function CanvasPage() {
 	}, [])
 
 	const items = useMemo(() => (canvas ? layoutViews(canvas) : []), [canvas])
+	const stageCanvases = useMemo(() => (canvas ? [canvas] : []), [canvas])
 
 	// Camera deep link: written back debounced so a copied URL reproduces the
 	// exact framing for review. The focused view and tooling LOD ride along —
@@ -71,9 +72,7 @@ export function CanvasPage() {
 						y: Math.round(camera.y),
 						z: Math.round(camera.zoom * 1000) / 1000,
 						...(onViewRef.current ? { view: onViewRef.current } : {}),
-						...(onLodRef.current === 'live'
-							? { lod: 'live' as const }
-							: {}),
+						...(onLodRef.current === 'live' ? { lod: 'live' as const } : {}),
 					},
 					replace: true,
 				})
@@ -110,6 +109,9 @@ export function CanvasPage() {
 				sourceViewId,
 			)
 			if (!destination) return
+			// A pending source-camera write would otherwise race this transition and
+			// navigate back to the canvas the reviewer just left.
+			clearTimeout(debounceRef.current)
 			navigate(`/_design/c/${destination.canvasId}`, {
 				search: destination.viewId ? { view: destination.viewId } : {},
 			})
@@ -169,7 +171,7 @@ export function CanvasPage() {
 				focusKey={focusKey}
 				fitKey={canvas.id}
 				onCameraMove={onCameraMove}
-				canvas={canvas}
+				canvases={stageCanvases}
 				onPrototypeNavigate={onPrototypeNavigate}
 				artboardMode={search.lod === 'live' ? 'live' : 'adaptive'}
 			/>
