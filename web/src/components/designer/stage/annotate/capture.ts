@@ -3,11 +3,13 @@
  *
  * Two dev toolchains annotate the dev DOM with source locations: - TanStack
  * devtools: `data-tsd-source="file:line:column"` on JSX elements. Nothing
- * removes them; live reads suffice. - Astro (compiler `annotateSourceFile`, dev
- * + devToolbar on): `data-astro-source-file` / `data-astro-source-loc`. The
- * built-in Audit dev-toolbar app moves them into a private WeakMap and REMOVES
- * them from the DOM at init — so by the time the lazily-loaded canvas chunk
- * reads the DOM, they are usually gone.
+ * removes them; live reads suffice. - Astro (compiler `annotateSourceFile`,
+ * dev
+ *
+ * - DevToolbar on): `data-astro-source-file` / `data-astro-source-loc`. The
+ *   built-in Audit dev-toolbar app moves them into a private WeakMap and
+ *   REMOVES them from the DOM at init — so by the time the lazily-loaded canvas
+ *   chunk reads the DOM, they are usually gone.
  *
  * This module snapshots both families into our own WeakMap. Install it as early
  * as possible (host bootstrap); a MutationObserver with attributeOldValue still
