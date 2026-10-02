@@ -148,6 +148,11 @@
 					"target": "~/web/src/components/designer/stage/preview-raster.ts"
 				},
 				{
+					"path": "web/src/components/designer/stage/preview-canvas.tsx",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/stage/preview-canvas.tsx"
+				},
+				{
 					"path": "web/src/components/designer/stage/preview.tsx",
 					"type": "registry:file",
 					"target": "~/web/src/components/designer/stage/preview.tsx"

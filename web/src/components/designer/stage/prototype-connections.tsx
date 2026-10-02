@@ -20,7 +20,7 @@ function parseFrameKey(
 	return { canvasId: key.slice(0, separator), viewId: key.slice(separator + 2) }
 }
 
-function readHotspots(
+export function readHotspots(
 	world: HTMLElement,
 	items: PlacedItem[],
 ): PrototypeHotspot[] {
@@ -30,43 +30,44 @@ function readHotspots(
 			.map((item) => [item.key, item]),
 	)
 
-	return [...world.querySelectorAll<HTMLElement>(HOTSPOT_SELECTOR)].flatMap(
-		(element, index) => {
-			const frame = element.closest<HTMLElement>(FRAME_SELECTOR)
-			const frameKey = frame?.dataset.dcFrame
-			const targetCanvasId = element.dataset.dcPrototypeTo
-			if (!frame || !frameKey || !targetCanvasId) return []
-			const source = artboards.get(frameKey)
-			const parsed = parseFrameKey(frameKey)
-			if (!source || !parsed) return []
+	const hotspots = new Map<string, PrototypeHotspot>()
+	for (const [index, element] of [
+		...world.querySelectorAll<HTMLElement>(HOTSPOT_SELECTOR),
+	].entries()) {
+		const frame = element.closest<HTMLElement>(FRAME_SELECTOR)
+		const frameKey = frame?.dataset.dcFrame
+		const targetCanvasId = element.dataset.dcPrototypeTo
+		if (!frame || !frameKey || !targetCanvasId) continue
+		const source = artboards.get(frameKey)
+		const parsed = parseFrameKey(frameKey)
+		if (!source || !parsed) continue
 
-			const frameRect = frame.getBoundingClientRect()
-			const elementRect = element.getBoundingClientRect()
-			if (frameRect.width <= 0 || elementRect.width <= 0) return []
-			const scale = frameRect.width / source.width
-			const hotspotId =
-				element.dataset.dcPrototypeId ?? `${targetCanvasId}:${index}`
-			return [
-				{
-					key: `${frameKey}::${hotspotId}`,
-					fromCanvasId: parsed.canvasId,
-					fromViewId: parsed.viewId,
-					toCanvasId: targetCanvasId,
-					label: element.dataset.dcPrototypeLabel,
-					point: {
-						x:
-							source.x +
-							(elementRect.left + elementRect.width / 2 - frameRect.left) /
-								scale,
-						y:
-							source.y +
-							(elementRect.top + elementRect.height / 2 - frameRect.top) /
-								scale,
-					},
-				},
-			]
-		},
-	)
+		const frameRect = frame.getBoundingClientRect()
+		const elementRect = element.getBoundingClientRect()
+		if (frameRect.width <= 0 || elementRect.width <= 0) continue
+		const scale = frameRect.width / source.width
+		const hotspotId =
+			element.dataset.dcPrototypeId ?? `${targetCanvasId}:${index}`
+		const hotspot = {
+			key: `${frameKey}::${hotspotId}`,
+			fromCanvasId: parsed.canvasId,
+			fromViewId: parsed.viewId,
+			toCanvasId: targetCanvasId,
+			label: element.dataset.dcPrototypeLabel,
+			point: {
+				x:
+					source.x +
+					(elementRect.left + elementRect.width / 2 - frameRect.left) / scale,
+				y:
+					source.y +
+					(elementRect.top + elementRect.height / 2 - frameRect.top) / scale,
+			},
+		}
+		// A stable hotspot id describes one graph relation. List content may
+		// mount the same action on several rows; each copy would duplicate the edge.
+		if (!hotspots.has(hotspot.key)) hotspots.set(hotspot.key, hotspot)
+	}
+	return [...hotspots.values()]
 }
 
 const EMPTY_GRAPH: PrototypeGraph = { connections: [], unresolved: [] }
