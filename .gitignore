@@ -6,3 +6,4 @@ dist/
 .tanstack/
 .vite/
 *.tsbuildinfo
+.claude/worktrees/

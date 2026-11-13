@@ -1,11 +1,5 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"files": [],
-	"references": [{ "path": "./web" }],
-	"compilerOptions": {
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["./web/src/*"]
-		}
-	}
+	"references": [{ "path": "./web" }]
 }
