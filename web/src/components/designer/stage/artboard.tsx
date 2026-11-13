@@ -4,7 +4,7 @@ import type { PlacedArtboard } from './layout'
 
 import { viewport } from '../api'
 import { ArtboardErrorBoundary } from './artboard-error-boundary'
-import { useStageZoom } from './stage'
+import { useStageZoom } from './stage-context'
 
 const presetName = (width: number): string | null => {
 	for (const [name, presetWidth] of Object.entries(viewport)) {

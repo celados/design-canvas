@@ -66,7 +66,7 @@ export function CanvasPage() {
 			if (!canvasId) return
 			clearTimeout(debounceRef.current)
 			debounceRef.current = setTimeout(() => {
-				navigate(`/_design/c/${canvasId}`, {
+				void navigate(`/_design/c/${canvasId}`, {
 					search: {
 						x: Math.round(camera.x),
 						y: Math.round(camera.y),
@@ -93,7 +93,7 @@ export function CanvasPage() {
 	const onSelectView = useCallback(
 		(viewId: string | undefined) => {
 			if (!canvasId) return
-			navigate(`/_design/c/${canvasId}`, {
+			void navigate(`/_design/c/${canvasId}`, {
 				search: viewId ? { view: viewId } : {},
 				replace: true,
 			})
@@ -112,7 +112,7 @@ export function CanvasPage() {
 			// A pending source-camera write would otherwise race this transition and
 			// navigate back to the canvas the reviewer just left.
 			clearTimeout(debounceRef.current)
-			navigate(`/_design/c/${destination.canvasId}`, {
+			void navigate(`/_design/c/${destination.canvasId}`, {
 				search: destination.viewId ? { view: destination.viewId } : {},
 			})
 		},
@@ -137,7 +137,7 @@ export function CanvasPage() {
 			const index = canvases.findIndex((entry) => entry.id === canvas.id)
 			const delta = event.key === ']' ? 1 : -1
 			const next = canvases[(index + delta + canvases.length) % canvases.length]
-			if (next) navigate(`/_design/c/${next.id}`)
+			if (next) void navigate(`/_design/c/${next.id}`)
 		}
 		window.addEventListener('keydown', onKeyDown)
 		return () => window.removeEventListener('keydown', onKeyDown)

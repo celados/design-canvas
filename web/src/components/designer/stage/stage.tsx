@@ -4,9 +4,7 @@ import type {
 } from 'react'
 
 import {
-	createContext,
 	useCallback,
-	useContext,
 	useEffect,
 	useLayoutEffect,
 	useMemo,
@@ -17,6 +15,7 @@ import {
 import type { CanvasDefinition } from '../api'
 import type { Camera, Rect, Size } from './camera'
 import type { PlacedItem } from './layout'
+import type { StageApiValue } from './stage-context'
 
 import { readPrototypeIntent } from '../prototype'
 import { Annotator } from './annotate/annotator'
@@ -36,28 +35,11 @@ import { useSnapshotCaptureDeferral } from './preview'
 import { PreviewCanvas } from './preview-canvas'
 import { PrototypeConnections } from './prototype-connections'
 import { ReferenceLayer } from './refs'
-
-// Three contexts with distinct invalidation rates: zoom changes rarely drive
-// artboard re-renders; api callbacks never change; camera changes every frame
-// during pan and is consumed only by screen-space overlays (composer, pins
-// fly-to), never by Artboard.
-const StageZoomContext = createContext(1)
-export const useStageZoom = () => useContext(StageZoomContext)
-
-type StageApiValue = {
-	screenToWorld: (screenX: number, screenY: number) => { x: number; y: number }
-	viewportCenterWorld: () => { x: number; y: number }
-	flyTo: (rect: Rect) => void
-}
-const StageApiContext = createContext<StageApiValue>({
-	screenToWorld: () => ({ x: 0, y: 0 }),
-	viewportCenterWorld: () => ({ x: 0, y: 0 }),
-	flyTo: () => {},
-})
-export const useStageApi = () => useContext(StageApiContext)
-
-const StageCameraContext = createContext<Camera>({ x: 0, y: 0, zoom: 1 })
-export const useStageCamera = () => useContext(StageCameraContext)
+import {
+	StageApiContext,
+	StageCameraContext,
+	StageZoomContext,
+} from './stage-context'
 
 const FIT_PADDING = 120
 const LOD_SETTLE_MS = 180

@@ -158,6 +158,11 @@
 					"target": "~/web/src/components/designer/stage/refs.tsx"
 				},
 				{
+					"path": "web/src/components/designer/stage/stage-context.ts",
+					"type": "registry:file",
+					"target": "~/web/src/components/designer/stage/stage-context.ts"
+				},
+				{
 					"path": "web/src/components/designer/stage/stage.tsx",
 					"type": "registry:file",
 					"target": "~/web/src/components/designer/stage/stage.tsx"

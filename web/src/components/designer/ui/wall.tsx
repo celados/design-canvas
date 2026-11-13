@@ -38,7 +38,7 @@ export function WallPage() {
 		(camera: Camera) => {
 			clearTimeout(debounceRef.current)
 			debounceRef.current = setTimeout(() => {
-				navigate('/_design/wall', {
+				void navigate('/_design/wall', {
 					search: {
 						x: Math.round(camera.x),
 						y: Math.round(camera.y),
@@ -60,7 +60,7 @@ export function WallPage() {
 
 	const openArtboard = useCallback(
 		(canvasId: string, viewId: string) => {
-			navigate(`/_design/c/${canvasId}`, { search: { view: viewId } })
+			void navigate(`/_design/c/${canvasId}`, { search: { view: viewId } })
 		},
 		[navigate],
 	)

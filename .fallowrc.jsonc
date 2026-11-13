@@ -1,4 +1,12 @@
 {
 	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+	"entry": [
+		// The designer barrel is the registry's public surface: copied into
+		// consumers, whose code is the only importer.
+		"web/src/components/designer/index.ts",
+		"web/src/router.tsx",
+		"web/vite.config.ts",
+		"harness.config.ts",
+	],
 	"ignorePatterns": ["**/*.gen.ts"],
 }

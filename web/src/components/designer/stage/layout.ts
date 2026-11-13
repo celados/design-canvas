@@ -1,10 +1,10 @@
 import type { CanvasDefinition, CanvasView } from '../api'
 import type { Rect } from './camera'
 
-export const COL_GAP = 72
-export const ROW_GAP = 120
-export const GROUP_GAP = 200
-export const FLOW_GAP = 240
+const COL_GAP = 72
+const ROW_GAP = 120
+const GROUP_GAP = 200
+const FLOW_GAP = 240
 const GROUP_LABEL_H = 64
 const CANVAS_LABEL_H = 44
 const FALLBACK_HEIGHT = 780

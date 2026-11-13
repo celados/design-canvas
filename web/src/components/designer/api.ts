@@ -8,8 +8,6 @@ export const viewport = {
 	mobile: 390,
 } as const
 
-export type ViewportName = keyof typeof viewport
-
 export type DeviceName = 'desktop' | 'tablet' | 'mobile'
 
 export type DesignerPagePreview = {

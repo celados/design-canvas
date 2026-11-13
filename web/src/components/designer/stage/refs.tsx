@@ -2,9 +2,9 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { useStageApi, useStageZoom } from './stage'
+import { useStageApi, useStageZoom } from './stage-context'
 
-export type RefImage = {
+type RefImage = {
 	id: string
 	src: string
 	x: number

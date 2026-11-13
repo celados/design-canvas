@@ -33,7 +33,7 @@ export function FlowPage() {
 				sourceViewId,
 			)
 			if (!destination) return
-			navigate(`/_design/c/${destination.canvasId}`, {
+			void navigate(`/_design/c/${destination.canvasId}`, {
 				search: destination.viewId ? { view: destination.viewId } : {},
 			})
 		},
@@ -41,7 +41,7 @@ export function FlowPage() {
 	)
 	const openArtboard = useCallback(
 		(canvasId: string, viewId: string) => {
-			navigate(`/_design/c/${canvasId}`, { search: { view: viewId } })
+			void navigate(`/_design/c/${canvasId}`, { search: { view: viewId } })
 		},
 		[navigate],
 	)

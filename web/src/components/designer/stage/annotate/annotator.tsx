@@ -7,7 +7,7 @@ import type { PlacedArtboard } from '../layout'
 import type { Annotation, AnnotationTarget } from './model'
 
 import { artboardKey } from '../layout'
-import { useStageApi, useStageCamera } from '../stage'
+import { useStageApi, useStageCamera } from '../stage-context'
 import { installSourceCapture } from './capture'
 import { annotationsToMarkdown } from './markdown'
 import {

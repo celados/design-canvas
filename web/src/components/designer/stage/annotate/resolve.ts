@@ -86,7 +86,7 @@ function isUniqueWithin(root: Element | Document, selector: string): boolean {
 }
 
 /** Selector unique within the frame (the same screen repeats across views). */
-export function buildSelector(el: Element, frame: HTMLElement): string {
+function buildSelector(el: Element, frame: HTMLElement): string {
 	if (el.id) {
 		const byId = `#${CSS.escape(el.id)}`
 		if (isUniqueWithin(frame, byId)) return byId
@@ -104,7 +104,7 @@ export function buildSelector(el: Element, frame: HTMLElement): string {
 	return segments.join(' > ')
 }
 
-export function elementLabel(el: Element): string {
+function elementLabel(el: Element): string {
 	const tag = el.tagName.toLowerCase()
 	const raw =
 		el instanceof HTMLImageElement
