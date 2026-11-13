@@ -7,11 +7,7 @@
 	background: #0a0a0c;
 	color: #e4e4e7;
 	font-family:
-		'Inter Variable',
-		ui-sans-serif,
-		system-ui,
-		-apple-system,
-		'Segoe UI',
+		'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
 		sans-serif;
 	isolation: isolate;
 }
