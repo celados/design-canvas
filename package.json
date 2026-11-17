@@ -45,7 +45,7 @@
 		"nitro": "^3.0.260610-beta",
 		"tsrs": "0.25.0-ts7.1.0-beta",
 		"typescript": "^7.0.2",
-		"vite": "npm:@voidzero-dev/vite-plus-core@^1.6.0",
+		"vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
 		"vite-plus": "^1.7.0",
 		"vitest": "^4.1.11"
 	}
